@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  checks:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: form-generator / lint
+            directory: form-generator
+            command: npm run lint:check && npm run format:check
+          - name: form-generator / type-check
+            directory: form-generator
+            command: npm run type-check
+          - name: form-generator / test
+            directory: form-generator
+            command: npm run test:unit
+          - name: form-generator / build
+            directory: form-generator
+            command: npm run build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ${{ matrix.directory }}/.nvmrc
+          cache: npm
+          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.directory }}
+        run: npm ci
+
+      - name: Run checks
+        working-directory: ${{ matrix.directory }}
+        run: ${{ matrix.command }}
