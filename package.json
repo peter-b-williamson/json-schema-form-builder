@@ -1,0 +1,22 @@
+{
+  "name": "js-schema-form-generator",
+  "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1"
+  },
+  "lint-staged": {
+    "form-generator/**/*.{ts,vue,js}": [
+      "npm --prefix form-generator run lint"
+    ],
+    "form-generator/**/*.{ts,vue,js,json,css,md}": [
+      "npm --prefix form-generator run format"
+    ]
+  }
+}
