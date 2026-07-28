@@ -1,7 +1,7 @@
 <template>
   <v-tooltip :text="tooltipText" location="bottom">
     <template #activator="{ props: activatorProps }">
-      <div v-bind="activatorProps" class="d-flex align-center">
+      <div v-bind="activatorProps" data-cy="theme-toggle" class="d-flex align-center">
         <v-switch
           :model-value="themeStore.isDark"
           prepend-icon="mdi-weather-sunny"
@@ -19,10 +19,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+
 import { useThemeStore } from '@/stores/theme';
 
+// Composables
 const themeStore = useThemeStore();
 
+// Computed
 const tooltipText = computed(() =>
   themeStore.isDark ? 'Switch to light mode' : 'Switch to dark mode',
 );

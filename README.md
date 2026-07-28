@@ -88,7 +88,7 @@ Note that no certificates have been configured for this project as it has no dom
 
 | Workflow Name | Trigger                                    | Action                                                                                       |
 | ------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `ci.yml`      | Push to `main`, or any PR targeting `main` | Runs 4 checks in parallel: lint, type-check, unit test, production build smoke test          |
+| `ci.yml`      | Push to `main`, or any PR targeting `main` | Runs 5 checks in parallel: lint, type-check, unit test, production build smoke test, Cypress e2e |
 | `deploy.yml`  | Push to `main`                             | Build the app, deploy to [GitHub Pages](https://willpwa.github.io/json-schema-form-builder/) |
 
 **One-time manual setup**: in the repository's Settings → Pages, set "Source" to "GitHub Actions". This can't be done from a workflow file - without it, `deploy.yml` will run successfully but nothing will actually be served.
@@ -104,6 +104,8 @@ Note that no certificates have been configured for this project as it has no dom
 | TypeScript frontend instead of JavaScript                             | Static typing catches more bugs at compile time, and will make it safer to model JSON Schema types as the schema-driven form logic gets built out.                                                 |
 | Deployment to GitHub Pages                                            | Demonstrates a usable version of the project for free, with certificates handled automatically. This project has no backend yet, and GitHub Pages is sufficient until then.                        |
 | Husky + lint-staged instead of the Python `pre-commit` framework      | Keeps repo tooling entirely in the npm ecosystem - no Python dependency required just to run a git hook.                                                                                           |
+| Cypress specs target `data-cy` attributes, not text or CSS classes    | Decouples e2e tests from copy and styling changes, and avoids ambiguous matches when text appears in more than one place on a page.                                                                |
+| `splitpanes` for the resizable panel layout                           | Vuetify has no resizable split-pane primitive. `splitpanes` is a small, dependency-free, Vue 3-native library that handles drag-resize and touch input without pulling in a second UI kit.         |
 
 ### Tooling notes
 

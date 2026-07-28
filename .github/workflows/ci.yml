@@ -26,6 +26,9 @@ jobs:
           - name: form-builder / build
             directory: form-builder
             command: npm run build
+          - name: form-builder / e2e
+            directory: form-builder
+            command: npm run build && npm run test:e2e
     steps:
       - uses: actions/checkout@v7
 

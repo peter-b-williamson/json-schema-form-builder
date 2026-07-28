@@ -1,18 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomeView from '@/views/HomeView.vue';
+import FormBuilderView from '@/views/FormBuilderView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
+      name: 'form-builder',
+      component: FormBuilderView,
     },
     {
       path: '/:pathMatch(.*)*',
-      name: 'not-found',
-      component: () => import('@/views/NotFoundView.vue'),
+      redirect: { name: 'form-builder' },
     },
   ],
 });

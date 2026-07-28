@@ -1,5 +1,6 @@
 <template>
-  <v-app-bar title="JSON Schema Form Builder">
+  <v-app-bar>
+    <v-toolbar-title data-cy="app-title">JSON Schema Form Builder</v-toolbar-title>
     <template #append>
       <ThemeToggle />
     </template>
