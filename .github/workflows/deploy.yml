@@ -21,23 +21,23 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version-file: form-generator/.nvmrc
+          node-version-file: form-builder/.nvmrc
           cache: npm
-          cache-dependency-path: form-generator/package-lock.json
+          cache-dependency-path: form-builder/package-lock.json
 
       - name: Install dependencies
-        working-directory: form-generator
+        working-directory: form-builder
         run: npm ci
 
       - name: Build
-        working-directory: form-generator
+        working-directory: form-builder
         env:
-          VITE_BASE_PATH: /js-schema-form-generator/
+          VITE_BASE_PATH: /json-schema-form-builder/
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: form-generator/dist
+          path: form-builder/dist
 
   deploy:
     needs: build

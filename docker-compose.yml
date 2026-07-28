@@ -1,10 +1,10 @@
 services:
-  form-generator:
+  form-builder:
     build:
-      context: ./form-generator
+      context: ./form-builder
       dockerfile: Dockerfile.dev
     ports:
       - '5173:5173'
     volumes:
-      - ./form-generator:/app
+      - ./form-builder:/app
       - /app/node_modules

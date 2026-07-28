@@ -1,1 +1,1 @@
-# js-schema-form-generator
+# json-schema-form-builder

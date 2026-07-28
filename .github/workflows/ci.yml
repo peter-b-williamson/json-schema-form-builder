@@ -14,17 +14,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: form-generator / lint
-            directory: form-generator
+          - name: form-builder / lint
+            directory: form-builder
             command: npm run lint:check && npm run format:check
-          - name: form-generator / type-check
-            directory: form-generator
+          - name: form-builder / type-check
+            directory: form-builder
             command: npm run type-check
-          - name: form-generator / test
-            directory: form-generator
+          - name: form-builder / test
+            directory: form-builder
             command: npm run test:unit
-          - name: form-generator / build
-            directory: form-generator
+          - name: form-builder / build
+            directory: form-builder
             command: npm run build
     steps:
       - uses: actions/checkout@v7
