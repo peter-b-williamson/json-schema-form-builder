@@ -1,1 +1,119 @@
 # json-schema-form-builder
+
+A Vue 3 + TypeScript + Vuetify builder for forms backed by JSON schema.
+
+- [json-schema-form-builder](#json-schema-form-builder)
+  - [Project structure](#project-structure)
+    - [`form-builder/src`](#form-buildersrc)
+  - [Development workflow](#development-workflow)
+    - [Docker](#docker)
+  - [Production build](#production-build)
+    - [Docker](#docker-1)
+  - [CI/CD](#cicd)
+  - [Architectural decisions](#architectural-decisions)
+    - [Tooling notes](#tooling-notes)
+  - [Possible future improvements](#possible-future-improvements)
+
+## Project structure
+
+```
+.
+├── form-builder/         # The Vue application (see below)
+├── .github/workflows/    # CI and GitHub Pages deploy
+├── docker-compose.yml    # Dev environment entrypoint
+├── package.json          # Root tooling (git hooks)
+└── .editorconfig, .nvmrc # Repo-wide conventions
+```
+
+### `form-builder/src`
+
+```
+src/
+├── assets/      # Static assets (images / global CSS)
+├── components/  # Small, reusable, presentational components
+├── composables/ # Reusable Composition API logic
+├── layouts/     # Page structure (app bar, nav) wrapping route content
+├── plugins/     # Third-party plugin setup
+├── router/      # Route definitions
+├── stores/      # Pinia stores
+├── types/       # Shared TypeScript types
+└── views/       # Route-level components
+```
+
+## Development workflow
+
+Requires Node 24.
+
+```bash
+cd form-builder
+npm install
+npm run dev           # Vite dev server at localhost:5173
+npm run lint          # ESLint, autofixing
+npm run type-check    # vue-tsc
+npm run test:unit     # Vitest
+npm run test:e2e      # Cypress, against a production preview build
+npm run test:e2e:dev  # Cypress, interactive, against the dev server
+```
+
+A pre-commit hook (Husky + lint-staged, configured at the repo root) runs ESLint and Prettier on staged files before every commit.
+
+### Docker
+
+```bash
+docker compose up
+```
+
+This builds `form-builder/Dockerfile.dev`, bind-mounts the `form-builder/` source into the container, and runs the Vite dev server at `localhost:5173`. `node_modules` is installed inside the image. Vite's dev server hot reloads local development changes.
+
+## Production build
+
+```bash
+cd form-builder
+npm run build   # type-checks, then builds to dist/
+npm run preview # serves the production build locally for a smoke test
+```
+
+### Docker
+
+```bash
+docker build -f form-builder/Dockerfile form-builder -t form-builder:prod
+docker run -p 8080:80 form-builder:prod
+```
+
+Although out of scope for this project, the built frontend project could easily be hosted by a CDN like AWS Cloudfront to be globally deployed. Alternatively, `form-builder/Dockerfile` is also included to host the application in an AWS ECS deployment.
+
+Note that no certificates have been configured for this project as it has no domain name. As such, the frontend uses port 80 (http).
+
+## CI/CD
+
+| Workflow Name | Trigger                                    | Action                                                                                       |
+| ------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `ci.yml`      | Push to `main`, or any PR targeting `main` | Runs 4 checks in parallel: lint, type-check, unit test, production build smoke test          |
+| `deploy.yml`  | Push to `main`                             | Build the app, deploy to [GitHub Pages](https://willpwa.github.io/json-schema-form-builder/) |
+
+**One-time manual setup**: in the repository's Settings → Pages, set "Source" to "GitHub Actions". This can't be done from a workflow file - without it, `deploy.yml` will run successfully but nothing will actually be served.
+
+## Architectural decisions
+
+| Decision                                                              | Reason                                                                                                                                                                                             |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Use Vue layouts, despite having only one layout                       | This is the most futureproof way to build a Vue app, removing unnecessary rerenders of components that do not change when navigating between pages and positioning well for future implementation. |
+| State and mutation logic live in the Pinia stores                     | Components can read store state and call actions but don't edit or own the state themselves. This leads to more predictable mutations and a single source of truth, generally safer.               |
+| ESLint enforces code-quality rules while Prettier enforces formatting | ESLint's stylistic rules have been disabled to avoid fighting with Prettier. This keeps the best of both tools, keeping the code more maintainable and clear.                                      |
+| Vuetify as component library                                          | Speeds up development and avoids reinventing common UI patterns. It's a mature, well-established library with accessibility support built in.                                                      |
+| TypeScript frontend instead of JavaScript                             | Static typing catches more bugs at compile time, and will make it safer to model JSON Schema types as the schema-driven form logic gets built out.                                                 |
+| Deployment to GitHub Pages                                            | Demonstrates a usable version of the project for free, with certificates handled automatically. This project has no backend yet, and GitHub Pages is sufficient until then.                        |
+| Husky + lint-staged instead of the Python `pre-commit` framework      | Keeps repo tooling entirely in the npm ecosystem - no Python dependency required just to run a git hook.                                                                                           |
+
+### Tooling notes
+
+- **`vue/max-attributes-per-line` was tried and dropped.** Prettier's attribute wrapping is purely printWidth-based, so it and this rule structurally disagree - whichever tool runs last wins, meaning `lint:check` and `format:check` could never both pass. Prettier now owns attribute wrapping.
+- **`vue/block-order` enforces `template` → `script` → `style`** as the `.vue` file layout convention. No conflict with Prettier here, since block order isn't a formatting decision Prettier makes.
+- **`.gitattributes` forces LF line endings repo-wide.** Some dev machines default to `core.autocrlf=true`, which could otherwise check out `.husky/pre-commit` with CRLF endings and break the hook's shell execution.
+
+## Possible future improvements
+
+- Add Vitest component testing (`@vue/test-utils` mount tests) alongside the existing store unit tests.
+- Introduce per-route layouts if a second layout becomes necessary, rather than before.
+- Add a theming setup (Vuetify's theme system) once there's a design direction to encode.
+- Add environment-based config (`.env` files) once the app talks to a real backend.
