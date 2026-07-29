@@ -32,6 +32,7 @@ src/
 ├── assets/      # Static assets (images / global CSS)
 ├── components/  # Small, reusable, presentational components
 ├── composables/ # Reusable Composition API logic
+├── fields/      # Field type definitions, defaults, and factory logic
 ├── layouts/     # Page structure (app bar, nav) wrapping route content
 ├── plugins/     # Third-party plugin setup
 ├── router/      # Route definitions
@@ -106,6 +107,8 @@ Note that no certificates have been configured for this project as it has no dom
 | Husky + lint-staged instead of the Python `pre-commit` framework      | Keeps repo tooling entirely in the npm ecosystem - no Python dependency required just to run a git hook.                                                                                           |
 | Cypress specs target `data-cy` attributes, not text or CSS classes    | Decouples e2e tests from copy and styling changes, and avoids ambiguous matches when text appears in more than one place on a page.                                                                |
 | `splitpanes` for the resizable panel layout                           | Vuetify has no resizable split-pane primitive. `splitpanes` is a small, dependency-free, Vue 3-native library that handles drag-resize and touch input without pulling in a second UI kit.         |
+| Field types modeled as a discriminated union on `type`, not one interface with every property optional | Lets TypeScript narrow to the correct field-specific properties (`minLength`, `isFloat`, `options`, ...) at each usage site, and turns a missing case for a new field type into a compile error in the registry, store guard, and property editor rather than a silent gap. |
+| Fields and select options referenced by UUID (`key` / `id`), never by array index | Keeps remove/select/update operations - and the property-editor's runtime allow-list - stable regardless of position, which matters once drag-and-drop reordering changes array order without changing identity. |
 
 ### Tooling notes
 
