@@ -1,6 +1,6 @@
 <template>
   <Splitpanes class="three-column-layout" :horizontal="stacked" @resized="onResized">
-    <Pane :size="sizes[0]" min-size="10">
+    <Pane :size="sizes[0]" min-size="20">
       <slot name="left" />
     </Pane>
     <Pane :size="sizes[1]" min-size="20">

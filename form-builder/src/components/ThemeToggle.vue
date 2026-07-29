@@ -6,7 +6,6 @@
           :model-value="themeStore.isDark"
           prepend-icon="mdi-weather-sunny"
           append-icon="mdi-weather-night"
-          color="primary"
           density="compact"
           hide-details
           :aria-label="tooltipText"
