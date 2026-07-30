@@ -104,4 +104,62 @@ describe('useFormBuilderStore', () => {
 
     warnSpy.mockRestore();
   });
+
+  it('reorders fields to match the given key order', () => {
+    const store = useFormBuilderStore();
+
+    store.addField('text');
+    store.addField('number');
+    store.addField('selection');
+    const [first, second, third] = store.fields;
+
+    store.reorderFields([third!.key, first!.key, second!.key]);
+
+    expect(store.fields.map((field) => field.key)).toEqual([third!.key, first!.key, second!.key]);
+  });
+
+  it('preserves field object identity when reordering, not just values', () => {
+    const store = useFormBuilderStore();
+
+    store.addField('text');
+    store.addField('number');
+    const [first, second] = store.fields;
+
+    store.reorderFields([second!.key, first!.key]);
+
+    expect(store.fields[0]).toBe(second);
+    expect(store.fields[1]).toBe(first);
+  });
+
+  it('ignores a reorder that does not account for every current field', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const store = useFormBuilderStore();
+
+    store.addField('text');
+    store.addField('number');
+    const [first] = store.fields;
+    const originalOrder = store.fields.map((field) => field.key);
+
+    store.reorderFields([first!.key]);
+
+    expect(store.fields.map((field) => field.key)).toEqual(originalOrder);
+
+    warnSpy.mockRestore();
+  });
+
+  it('ignores a reorder containing a key that does not belong to any current field', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const store = useFormBuilderStore();
+
+    store.addField('text');
+    store.addField('number');
+    const [first] = store.fields;
+    const originalOrder = store.fields.map((field) => field.key);
+
+    store.reorderFields([first!.key, 'not-a-real-key']);
+
+    expect(store.fields.map((field) => field.key)).toEqual(originalOrder);
+
+    warnSpy.mockRestore();
+  });
 });

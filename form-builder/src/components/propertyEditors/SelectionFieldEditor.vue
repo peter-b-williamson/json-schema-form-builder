@@ -21,42 +21,63 @@
       </v-btn>
     </div>
 
-    <div
-      v-for="option in field.options"
-      :key="option.id"
-      class="d-flex ga-2 align-center"
-      :data-cy="`option-row-${option.id}`"
+    <VueDraggable
+      v-model="options"
+      tag="div"
+      handle=".drag-handle"
+      :animation="150"
+      ghost-class="opacity-50"
+      :force-fallback="true"
+      :support-pointer="false"
     >
-      <v-text-field
-        :model-value="option.label"
-        label="Label"
-        density="compact"
-        hide-details
-        :data-cy="`option-label-input-${option.id}`"
-        @update:model-value="(value) => updateOption(option.id, { label: value })"
-      />
-      <v-text-field
-        :model-value="option.value"
-        label="Value"
-        density="compact"
-        hide-details
-        :data-cy="`option-value-input-${option.id}`"
-        @update:model-value="(value) => updateOption(option.id, { value })"
-      />
-      <v-btn
-        icon="mdi-delete"
-        density="compact"
-        variant="text"
-        :aria-label="`Remove option ${option.label}`"
-        :data-cy="`remove-option-button-${option.id}`"
-        @click="removeOption(option.id)"
-      />
-    </div>
+      <div
+        v-for="(option, index) in options"
+        :key="option.id"
+        class="d-flex ga-2 align-center"
+        :data-cy="`option-row-${option.id}`"
+      >
+        <div
+          class="drag-handle d-flex align-center ga-1"
+          style="cursor: grab"
+          :data-cy="`option-drag-handle-${option.id}`"
+        >
+          <v-icon icon="mdi-drag-vertical" />
+          <span class="text-caption text-medium-emphasis" :data-cy="`option-index-${option.id}`">
+            {{ index + 1 }}
+          </span>
+        </div>
+        <v-text-field
+          :model-value="option.label"
+          label="Label"
+          density="compact"
+          hide-details
+          :data-cy="`option-label-input-${option.id}`"
+          @update:model-value="(value) => updateOption(option.id, { label: value })"
+        />
+        <v-text-field
+          :model-value="option.value"
+          label="Value"
+          density="compact"
+          hide-details
+          :data-cy="`option-value-input-${option.id}`"
+          @update:model-value="(value) => updateOption(option.id, { value })"
+        />
+        <v-btn
+          icon="mdi-delete"
+          density="compact"
+          variant="text"
+          :aria-label="`Remove option ${option.label}`"
+          :data-cy="`remove-option-button-${option.id}`"
+          @click="removeOption(option.id)"
+        />
+      </div>
+    </VueDraggable>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { VueDraggable } from 'vue-draggable-plus';
 
 import { useFieldPropertyModel } from '@/composables/useFieldPropertyModel';
 import { useFormBuilderStore } from '@/stores/formBuilder';
@@ -74,6 +95,7 @@ const multiple = useFieldPropertyModel(
   'multiple',
   formStore.updateSelectedField,
 );
+const options = useFieldPropertyModel(() => props.field, 'options', formStore.updateSelectedField);
 
 // State
 const nextOptionNumber = ref(props.field.options.length + 1);
@@ -90,10 +112,10 @@ const addOption = () => {
 };
 
 const updateOption = (id: string, patch: Partial<Omit<SelectOption, 'id'>>) => {
-  const options = props.field.options.map((option) =>
+  const updatedOptions = props.field.options.map((option) =>
     option.id === id ? { ...option, ...patch } : option,
   );
-  formStore.updateSelectedField({ options });
+  formStore.updateSelectedField({ options: updatedOptions });
 };
 
 const removeOption = (id: string) => {

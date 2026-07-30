@@ -32,6 +32,25 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     selectedKey.value = key;
   };
 
+  // Takes an ordered list of keys rather than the reordered field objects
+  // themselves, so a malformed order (wrong length, unknown key) is caught
+  // here instead of silently dropping or duplicating a field.
+  const reorderFields = (order: string[]) => {
+    const byKey = new Map(fields.value.map((field) => [field.key, field]));
+    const reordered = order
+      .map((key) => byKey.get(key))
+      .filter((field): field is FormField => field !== undefined);
+
+    if (reordered.length !== fields.value.length) {
+      if (import.meta.env.DEV) {
+        console.warn('reorderFields: order did not match the current fields, ignoring.');
+      }
+      return;
+    }
+
+    fields.value = reordered;
+  };
+
   const updateSelectedField = (updates: FieldUpdate) => {
     const field = selectedField.value;
     if (!field) return;
@@ -59,6 +78,7 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     addField,
     removeField,
     selectField,
+    reorderFields,
     updateSelectedField,
   };
 });
