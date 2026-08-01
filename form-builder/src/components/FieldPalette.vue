@@ -1,5 +1,5 @@
 <template>
-  <v-list data-cy="field-palette py-0" rounded>
+  <v-list data-cy="field-palette" class="py-0" rounded>
     <template v-for="(definition, index) in fieldTypeList" :key="definition.type">
       <v-list-item
         :prepend-icon="definition.icon"

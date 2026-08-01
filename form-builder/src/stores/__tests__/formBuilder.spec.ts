@@ -37,6 +37,15 @@ describe('useFormBuilderStore', () => {
     expect(store.selectedField?.key).toBe(store.fields[0]?.key);
   });
 
+  it('clears the selection when deselected', () => {
+    const store = useFormBuilderStore();
+
+    store.addField('text');
+    store.deselectField();
+
+    expect(store.selectedField).toBeNull();
+  });
+
   it('removes a field by key without disturbing the others', () => {
     const store = useFormBuilderStore();
 

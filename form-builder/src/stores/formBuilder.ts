@@ -32,6 +32,10 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     selectedKey.value = key;
   };
 
+  const deselectField = () => {
+    selectedKey.value = null;
+  };
+
   // Takes an ordered list of keys rather than the reordered field objects
   // themselves, so a malformed order (wrong length, unknown key) is caught
   // here instead of silently dropping or duplicating a field.
@@ -76,6 +80,7 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     selectedKey,
     selectedField,
     addField,
+    deselectField,
     removeField,
     selectField,
     reorderFields,
