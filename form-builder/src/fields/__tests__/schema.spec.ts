@@ -28,6 +28,16 @@ describe('generateJsonSchema', () => {
     });
   });
 
+  it('maps a text field placeholder to a ui.placeholder hint', () => {
+    const field: TextField = { ...(createField('text') as TextField), placeholder: 'Jane Doe' };
+
+    const schema = generateJsonSchema([field], GENERATED_AT);
+
+    expect(schema.properties).toEqual({
+      [field.key]: { title: field.title, type: 'string', ui: { placeholder: 'Jane Doe' } },
+    });
+  });
+
   it('maps a number field to integer or number based on isFloat, with min/max as bounds', () => {
     const wholeNumber: NumberField = {
       ...(createField('number') as NumberField),

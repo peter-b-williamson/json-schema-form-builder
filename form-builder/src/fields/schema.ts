@@ -3,6 +3,12 @@ import type { FormField } from './types';
 
 export const JSON_SCHEMA_DIALECT = 'https://json-schema.org/draft/2020-12/schema';
 
+// Add non-standard metadata for UI rendering
+const addUIMetadata = (config: Record<string, unknown>): Record<string, unknown> => {
+  const filteredEntries = Object.entries(config).filter(([, value]) => !!value);
+  return filteredEntries.length ? { ui: Object.fromEntries(filteredEntries) } : {};
+};
+
 const fieldToPropertySchema = (field: FormField): Record<string, unknown> => {
   switch (field.type) {
     case 'text':
@@ -11,6 +17,7 @@ const fieldToPropertySchema = (field: FormField): Record<string, unknown> => {
         type: 'string',
         ...(field.minLength !== undefined && { minLength: field.minLength }),
         ...(field.maxLength !== undefined && { maxLength: field.maxLength }),
+        ...addUIMetadata({ placeholder: field.placeholder }),
       };
     case 'number':
       return {
