@@ -25,6 +25,7 @@ vi.mock('@/plugins/vuetify', () => ({
 }));
 
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import { useFormBuilderStore } from '@/stores/formBuilder';
 
 describe('DefaultLayout', () => {
   const vuetify = createVuetify();
@@ -58,5 +59,55 @@ describe('DefaultLayout', () => {
 
     expect(changeMock).toHaveBeenCalledWith('dark');
     expect(localStorage.getItem('theme')).toBe('dark');
+  });
+
+  describe('undo/redo', () => {
+    it('disables both buttons when there is nothing to undo or redo', () => {
+      const wrapper = mountDefaultLayout();
+
+      expect(wrapper.get('[data-cy=undo-button] button').attributes('disabled')).toBeDefined();
+      expect(wrapper.get('[data-cy=redo-button] button').attributes('disabled')).toBeDefined();
+    });
+
+    it('undoes and redoes the last action when its button is clicked', async () => {
+      const wrapper = mountDefaultLayout();
+      const formStore = useFormBuilderStore();
+
+      formStore.addField('text');
+      await wrapper.vm.$nextTick();
+      expect(wrapper.get('[data-cy=undo-button] button').attributes('disabled')).toBeUndefined();
+
+      await wrapper.get('[data-cy=undo-button] button').trigger('click');
+      expect(formStore.fields).toHaveLength(0);
+
+      await wrapper.get('[data-cy=redo-button] button').trigger('click');
+      expect(formStore.fields).toHaveLength(1);
+    });
+
+    it('undoes on ctrl+z and redoes on ctrl+y', async () => {
+      mountDefaultLayout();
+      const formStore = useFormBuilderStore();
+
+      formStore.addField('text');
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+      expect(formStore.fields).toHaveLength(0);
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true }));
+      expect(formStore.fields).toHaveLength(1);
+    });
+
+    it('redoes on ctrl+shift+z', () => {
+      mountDefaultLayout();
+      const formStore = useFormBuilderStore();
+
+      formStore.addField('text');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true }),
+      );
+
+      expect(formStore.fields).toHaveLength(1);
+    });
   });
 });

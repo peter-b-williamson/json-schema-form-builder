@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useFormBuilderStore } from '../formBuilder';
@@ -179,5 +179,158 @@ describe('useFormBuilderStore', () => {
     expect(store.fields.map((field) => field.id)).toEqual(originalOrder);
 
     warnSpy.mockRestore();
+  });
+
+  describe('undo/redo', () => {
+    it('has nothing to undo or redo initially', () => {
+      const store = useFormBuilderStore();
+
+      expect(store.canUndo).toBe(false);
+      expect(store.canRedo).toBe(false);
+    });
+
+    it('undoes adding a field', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.undo();
+
+      expect(store.fields).toHaveLength(0);
+      expect(store.canRedo).toBe(true);
+    });
+
+    it('redoes an undone add', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      const id = store.fields[0]!.id;
+      store.undo();
+      store.redo();
+
+      expect(store.fields).toHaveLength(1);
+      expect(store.fields[0]!.id).toBe(id);
+    });
+
+    it('undoes removing a field, including its selection', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      const id = store.fields[0]!.id;
+      store.removeField(id);
+      store.undo();
+
+      expect(store.fields).toHaveLength(1);
+      expect(store.selectedField?.id).toBe(id);
+    });
+
+    it('undoes a reorder', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.addField('number');
+      const [first, second] = store.fields;
+
+      store.reorderFields([second!.id, first!.id]);
+      store.undo();
+
+      expect(store.fields.map((field) => field.id)).toEqual([first!.id, second!.id]);
+    });
+
+    it('undoes a property update', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.updateSelectedField({ title: 'Renamed' });
+      store.undo();
+
+      expect(store.selectedField?.title).toBe('Text field');
+    });
+
+    it('does not record a step for an update with no valid properties', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.undo();
+      expect(store.canUndo).toBe(false);
+
+      store.addField('text');
+      store.updateSelectedField({ isFloat: true });
+
+      expect(store.canUndo).toBe(true);
+      store.undo();
+      expect(store.fields).toHaveLength(0);
+
+      warnSpy.mockRestore();
+    });
+
+    it('starting a new action clears the redo stack', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.undo();
+      expect(store.canRedo).toBe(true);
+
+      store.addField('number');
+
+      expect(store.canRedo).toBe(false);
+    });
+
+    describe('coalescing rapid edits to the same field', () => {
+      beforeEach(() => {
+        vi.useFakeTimers();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('treats a burst of edits to the same field as a single undo step', () => {
+        const store = useFormBuilderStore();
+
+        store.addField('text');
+        store.updateSelectedField({ title: 'R' });
+        store.updateSelectedField({ title: 'Re' });
+        store.updateSelectedField({ title: 'Ren' });
+
+        store.undo();
+
+        expect(store.selectedField?.title).toBe('Text field');
+      });
+
+      it('starts a new undo step once the coalescing window has passed', () => {
+        const store = useFormBuilderStore();
+
+        store.addField('text');
+        store.updateSelectedField({ title: 'First edit' });
+        vi.advanceTimersByTime(1000);
+        store.updateSelectedField({ title: 'Second edit' });
+
+        store.undo();
+        expect(store.selectedField?.title).toBe('First edit');
+
+        store.undo();
+        expect(store.selectedField?.title).toBe('Text field');
+      });
+
+      it('does not coalesce edits to different fields', () => {
+        const store = useFormBuilderStore();
+
+        store.addField('text');
+        store.addField('number');
+        const [first, second] = store.fields;
+
+        store.selectField(first!.id);
+        store.updateSelectedField({ title: 'First edited' });
+        store.selectField(second!.id);
+        store.updateSelectedField({ title: 'Second edited' });
+
+        store.undo();
+        expect(store.fields.find((field) => field.id === second!.id)?.title).toBe('Number field');
+
+        store.undo();
+        expect(store.fields.find((field) => field.id === first!.id)?.title).toBe('Text field');
+      });
+    });
   });
 });
