@@ -14,7 +14,18 @@
       <v-card class="pa-4" color="surfaceContainerLow">
         <h2 class="text-headline-medium mb-2 mt-0" data-cy="panel-heading-form">Form</h2>
         <v-divider opacity="1" role="presentation" class="mb-4" />
-        <FieldList />
+        <v-tabs v-model="centerTab" density="compact" color="primary" class="mb-4">
+          <v-tab value="fields" data-cy="center-tab-fields">Fields</v-tab>
+          <v-tab value="preview" data-cy="center-tab-preview">Preview</v-tab>
+        </v-tabs>
+        <v-window v-model="centerTab">
+          <v-window-item value="fields">
+            <FieldList />
+          </v-window-item>
+          <v-window-item value="preview">
+            <FormRenderer />
+          </v-window-item>
+        </v-window>
       </v-card>
     </template>
     <template #right>
@@ -30,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useDisplay } from 'vuetify';
 
 import ThreeColumnLayout from '@/components/ThreeColumnLayout.vue';
@@ -37,9 +49,13 @@ import MobileFormBuilder from '@/components/MobileFormBuilder.vue';
 import FieldPalette from '@/components/FieldPalette.vue';
 import FieldList from '@/components/FieldList.vue';
 import FieldPropertiesEditor from '@/components/FieldPropertiesEditor.vue';
+import FormRenderer from '@/components/FormRenderer.vue';
 
 // Composables
 const { mdAndDown } = useDisplay();
+
+// State
+const centerTab = ref<'fields' | 'preview'>('fields');
 </script>
 
 <style scoped>

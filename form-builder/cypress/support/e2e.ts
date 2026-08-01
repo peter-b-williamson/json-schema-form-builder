@@ -20,3 +20,13 @@ import './commands';
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
+
+// The browser fires this when it drops a ResizeObserver notification because the
+// callback didn't finish before the next frame - harmless, but Cypress otherwise
+// treats it as an uncaught exception and fails the test, which flakes specs that
+// happen to resize panels (e.g. Splitpanes) around the same tick.
+Cypress.on('uncaught:exception', (err) => {
+  if (err.message.includes('ResizeObserver loop completed with undelivered notifications.')) {
+    return false;
+  }
+});
