@@ -36,7 +36,18 @@
 
     <v-window v-model="page" class="flex-grow-1 overflow-y-auto">
       <v-window-item :value="0" class="pa-4">
-        <FieldList />
+        <v-tabs v-model="formTab" density="compact" color="primary" class="mb-4">
+          <v-tab value="fields" data-cy="mobile-tab-fields">Fields</v-tab>
+          <v-tab value="preview" data-cy="mobile-tab-preview">Preview</v-tab>
+        </v-tabs>
+        <v-window v-model="formTab">
+          <v-window-item value="fields">
+            <FieldList />
+          </v-window-item>
+          <v-window-item value="preview">
+            <FormRenderer :select-on-focus="false" />
+          </v-window-item>
+        </v-window>
       </v-window-item>
       <v-window-item :value="1" class="pa-4">
         <FieldPropertiesEditor />
@@ -52,6 +63,7 @@ import { useFormBuilderStore } from '@/stores/formBuilder';
 import FieldPalette from '@/components/FieldPalette.vue';
 import FieldList from '@/components/FieldList.vue';
 import FieldPropertiesEditor from '@/components/FieldPropertiesEditor.vue';
+import FormRenderer from '@/components/FormRenderer.vue';
 
 // Composables
 const formStore = useFormBuilderStore();
@@ -59,6 +71,7 @@ const formStore = useFormBuilderStore();
 // State
 const page = ref(0);
 const showPalette = ref(false);
+const formTab = ref<'fields' | 'preview'>('fields');
 
 // Methods
 const onBackButtonClick = () => {

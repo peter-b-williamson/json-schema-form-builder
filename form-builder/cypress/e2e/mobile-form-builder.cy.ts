@@ -45,4 +45,26 @@ describe('Mobile form builder', () => {
     cy.get('[data-cy=mobile-page-title]').should('contain.text', 'Text field');
     cy.get('[data-cy=field-properties-editor]').should('be.visible');
   });
+
+  it('switches to the preview tab and renders the configured field', () => {
+    cy.get('[data-cy=mobile-add-field-button]').click();
+    cy.get('[data-cy=add-field-text]').click();
+    cy.get('[data-cy=mobile-back-button]').click();
+
+    cy.get('[data-cy=mobile-tab-preview]').click();
+
+    cy.get('[data-cy^=preview-field-]').should('contain.text', 'Text field');
+  });
+
+  it('does not navigate to the full-screen properties page when a preview field is focused', () => {
+    cy.get('[data-cy=mobile-add-field-button]').click();
+    cy.get('[data-cy=add-field-text]').click();
+    cy.get('[data-cy=mobile-back-button]').click();
+
+    cy.get('[data-cy=mobile-tab-preview]').click();
+    cy.get('[data-cy^=preview-field-] input').focus();
+
+    cy.get('[data-cy=mobile-page-title]').should('contain.text', 'Form');
+    cy.get('[data-cy=mobile-back-button]').should('not.exist');
+  });
 });
