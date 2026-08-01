@@ -7,7 +7,7 @@ describe('Exporting the schema', () => {
     cy.get('[data-cy=export-schema-dialog]').should('not.exist');
 
     // Reference actual button inside v-fab wrapping element
-    cy.get('[data-cy=export-schema-button] button').click();
+    cy.get('[data-cy=export-schema-button]').click();
 
     cy.get('[data-cy=export-schema-dialog]').should('be.visible');
     cy.get('[data-cy=export-dialog-heading]').should('contain.text', 'Export Schema');
@@ -26,7 +26,7 @@ describe('Exporting the schema', () => {
     const filename = `export-${Date.now()}`;
 
     // Reference actual button inside v-fab wrapping element
-    cy.get('[data-cy=export-schema-button] button').click();
+    cy.get('[data-cy=export-schema-button]').click();
     cy.get('[data-cy=export-filename-input] input').clear();
     cy.get('[data-cy=export-filename-input] input').type(filename);
     cy.get('[data-cy=export-download-button]').click();
@@ -46,7 +46,7 @@ describe('Exporting the schema', () => {
     const filename = `already-suffixed-${Date.now()}.schema.json`;
 
     // Reference actual button inside v-fab wrapping element
-    cy.get('[data-cy=export-schema-button] button').click();
+    cy.get('[data-cy=export-schema-button]').click();
     cy.get('[data-cy=export-filename-input] input').clear();
     cy.get('[data-cy=export-filename-input] input').type(filename);
     cy.get('[data-cy=export-download-button]').click();

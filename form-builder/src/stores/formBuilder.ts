@@ -2,17 +2,21 @@ import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 
 import { createField, ensureUniqueKey, fieldPropertyKeys } from '@/fields/registry';
+import { useUndoableFormHistory } from '@/composables/useUndoableFormHistory';
 import type { FieldType, FieldUpdate, FormField } from '@/fields/types';
 
 export const useFormBuilderStore = defineStore('formBuilder', () => {
   const fields = ref<FormField[]>([]);
   const selectedId = ref<string | null>(null);
+  const { commit, undo, redo, canUndo, canRedo } = useUndoableFormHistory(fields, selectedId);
 
   const selectedField = computed(
     () => fields.value.find((field) => field.id === selectedId.value) ?? null,
   );
 
   const addField = (type: FieldType) => {
+    commit();
+
     const field = createField(type);
     field.key = ensureUniqueKey(field.key, new Set(fields.value.map((existing) => existing.key)));
     fields.value.push(field);
@@ -22,6 +26,8 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
   const removeField = (id: string) => {
     const index = fields.value.findIndex((field) => field.id === id);
     if (index === -1) return;
+
+    commit();
 
     fields.value.splice(index, 1);
     if (selectedId.value === id) {
@@ -53,6 +59,7 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
       return;
     }
 
+    commit();
     fields.value = reordered;
   };
 
@@ -73,6 +80,12 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
       }
     }
 
+    // Coalesced by field id, so a burst of edits to the same field (eg. every
+    // keystroke in its title) becomes one undo step rather than one per keystroke.
+    if (Object.keys(safeUpdates).length > 0) {
+      commit(field.id);
+    }
+
     Object.assign(field, safeUpdates);
   };
 
@@ -86,5 +99,9 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     selectField,
     reorderFields,
     updateSelectedField,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   };
 });
