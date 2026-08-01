@@ -65,8 +65,8 @@ describe('DefaultLayout', () => {
     it('disables both buttons when there is nothing to undo or redo', () => {
       const wrapper = mountDefaultLayout();
 
-      expect(wrapper.get('[data-cy=undo-button] button').attributes('disabled')).toBeDefined();
-      expect(wrapper.get('[data-cy=redo-button] button').attributes('disabled')).toBeDefined();
+      expect(wrapper.get('[data-cy=undo-button]').attributes('disabled')).toBeDefined();
+      expect(wrapper.get('[data-cy=redo-button]').attributes('disabled')).toBeDefined();
     });
 
     it('undoes and redoes the last action when its button is clicked', async () => {
@@ -75,12 +75,12 @@ describe('DefaultLayout', () => {
 
       formStore.addField('text');
       await wrapper.vm.$nextTick();
-      expect(wrapper.get('[data-cy=undo-button] button').attributes('disabled')).toBeUndefined();
+      expect(wrapper.get('[data-cy=undo-button]').attributes('disabled')).toBeUndefined();
 
-      await wrapper.get('[data-cy=undo-button] button').trigger('click');
+      await wrapper.get('[data-cy=undo-button]').trigger('click');
       expect(formStore.fields).toHaveLength(0);
 
-      await wrapper.get('[data-cy=redo-button] button').trigger('click');
+      await wrapper.get('[data-cy=redo-button]').trigger('click');
       expect(formStore.fields).toHaveLength(1);
     });
 
