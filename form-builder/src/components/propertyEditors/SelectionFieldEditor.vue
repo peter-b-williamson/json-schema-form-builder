@@ -10,15 +10,14 @@
     <div class="d-flex justify-space-between align-center">
       <span class="text-subtitle-2">Options</span>
       <v-btn
+        text="Add option"
         size="small"
         variant="text"
         prepend-icon="mdi-plus"
         data-cy="add-option-button"
         rounded
         @click="addOption"
-      >
-        Add option
-      </v-btn>
+      />
     </div>
 
     <VueDraggable

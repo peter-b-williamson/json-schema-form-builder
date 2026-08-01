@@ -5,7 +5,7 @@ import type { FieldUpdate, FormField } from '@/fields/types';
 // Binds a single property of a form field to a writable computed, so property-editor
 // components can `v-model` directly against the store without hand-rolling a
 // get/set pair per property.
-export const useFieldPropertyModel = <T extends FormField, K extends keyof Omit<T, 'key' | 'type'>>(
+export const useFieldPropertyModel = <T extends FormField, K extends keyof Omit<T, 'id' | 'type'>>(
   source: () => T,
   key: K,
   update: (patch: FieldUpdate) => void,

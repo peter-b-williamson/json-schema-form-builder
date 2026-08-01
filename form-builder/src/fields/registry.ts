@@ -34,13 +34,14 @@ export const fieldTypeList: FieldTypeDefinition[] = Object.values(fieldTypeDefin
 
 // Runtime allow-list of updatable properties per field type, used to guard against
 // applying an update shaped for the wrong field type (e.g. `isFloat` on a TextField).
-// Each object is typed as Record<keyof Omit<T, 'key' | 'type'>, true>, which forces
+// Each object is typed as Record<keyof Omit<T, 'id' | 'type'>, true>, which forces
 // every property of T to be listed exactly once - add, remove, or rename a field
 // property and the object literal fails to compile until this is updated to match.
-type PropertyKeys<T> = Record<keyof Omit<T, 'key' | 'type'>, true>;
+type PropertyKeys<T> = Record<keyof Omit<T, 'id' | 'type'>, true>;
 
 const textFieldKeys: PropertyKeys<TextField> = {
   title: true,
+  key: true,
   required: true,
   minLength: true,
   maxLength: true,
@@ -49,6 +50,7 @@ const textFieldKeys: PropertyKeys<TextField> = {
 
 const numberFieldKeys: PropertyKeys<NumberField> = {
   title: true,
+  key: true,
   required: true,
   min: true,
   max: true,
@@ -57,6 +59,7 @@ const numberFieldKeys: PropertyKeys<NumberField> = {
 
 const selectionFieldKeys: PropertyKeys<SelectionField> = {
   title: true,
+  key: true,
   required: true,
   options: true,
   multiple: true,
@@ -68,10 +71,29 @@ export const fieldPropertyKeys: Record<FieldType, ReadonlySet<string>> = {
   selection: new Set(Object.keys(selectionFieldKeys)),
 };
 
+export const toCamelCase = (value: string): string =>
+  value
+    .trim()
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_, firstCharOfWord: string) => firstCharOfWord.toUpperCase())
+    .replace(/^[A-Z]/, (firstChar: string) => firstChar.toLowerCase());
+
+export const ensureUniqueKey = (base: string, taken: ReadonlySet<string>): string => {
+  const safeBase = base.trim() || 'field';
+  let name = safeBase;
+  let suffix = 2;
+  while (taken.has(name)) {
+    name = `${safeBase}${suffix}`;
+    suffix += 1;
+  }
+  return name;
+};
+
 export const createField = (type: FieldType): FormField => {
+  const title = fieldTypeDefinitions[type].defaultTitle;
   const base = {
-    key: crypto.randomUUID(),
-    title: fieldTypeDefinitions[type].defaultTitle,
+    id: crypto.randomUUID(),
+    title,
+    key: toCamelCase(title),
     required: false,
   };
 

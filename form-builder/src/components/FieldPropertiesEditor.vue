@@ -1,6 +1,7 @@
 <template>
   <div v-if="selectedField" class="d-flex flex-column ga-4" data-cy="field-properties-editor">
     <v-text-field v-model="title" label="Title" data-cy="field-title-input" color="primary" />
+    <v-text-field v-model="key" label="Key" data-cy="field-key-input" color="primary" />
     <v-checkbox
       v-model="required"
       label="Required"
@@ -43,6 +44,7 @@ const title = useFieldPropertyModel(
   'title',
   formStore.updateSelectedField,
 );
+const key = useFieldPropertyModel(() => selectedField.value!, 'key', formStore.updateSelectedField);
 const required = useFieldPropertyModel(
   () => selectedField.value!,
   'required',

@@ -48,12 +48,12 @@ Requires Node 24.
 ```bash
 cd form-builder
 npm install
-npm run dev           # Vite dev server at localhost:5173
-npm run lint          # ESLint, autofixing
-npm run type-check    # vue-tsc
-npm run test:unit     # Vitest
-npm run test:e2e      # Cypress, against a production preview build
-npm run test:e2e:dev  # Cypress, interactive, against the dev server
+npm run dev          # Vite dev server at localhost:5173
+npm run lint         # ESLint, autofixing
+npm run type-check   # vue-tsc
+npm run test:unit    # Vitest
+npm run test:e2e     # Cypress, against a production preview build
+npm run test:e2e:dev # Cypress, interactive, against the dev server
 ```
 
 A pre-commit hook (Husky + lint-staged, configured at the repo root) runs ESLint and Prettier on staged files before every commit.
@@ -117,10 +117,11 @@ Note that no certificates have been configured for this project as it has no dom
 - **`vue/max-attributes-per-line` was tried and dropped.** Prettier's attribute wrapping is purely printWidth-based, so it and this rule structurally disagree - whichever tool runs last wins, meaning `lint:check` and `format:check` could never both pass. Prettier now owns attribute wrapping.
 - **`vue/block-order` enforces `template` → `script` → `style`** as the `.vue` file layout convention. No conflict with Prettier here, since block order isn't a formatting decision Prettier makes.
 - **`.gitattributes` forces LF line endings repo-wide.** Some dev machines default to `core.autocrlf=true`, which could otherwise check out `.husky/pre-commit` with CRLF endings and break the hook's shell execution.
+- **Drag-and-drop in Cypress needs `forceFallback` + `supportPointer: false` on `vue-draggable-plus`, plus `cypress-real-events`.** SortableJS uses native HTML5 drag-and-drop, which Cypress's synthetic `.trigger()` events can't recreated. `forceFallback`/`supportPointer: false` on `<VueDraggable>` usages switch SortableJS to use its own plain mouse-event implementation, and `cypress-real-events` (see `cypress/support/commands.ts`'s `dragAndDrop` command) fires real OS-level events via CDP instead of untrusted synthetic ones.
+- **Cypress's default viewport is 1920×1080** (`cypress.config.ts`), so `mdAndDown`-gated mobile UI (`MobileFormBuilder.vue`) never renders in the default desktop specs. `cypress/e2e/mobile-form-builder.cy.ts` explicitly overrides this with `cy.viewport(390, 844)` per-spec to exercise the mobile layout - any future mobile-specific spec needs the same override.
 
 ## Possible future improvements
 
 - Add Vitest component testing (`@vue/test-utils` mount tests) alongside the existing store unit tests.
 - Introduce per-route layouts if a second layout becomes necessary, rather than before.
-- Add a theming setup (Vuetify's theme system) once there's a design direction to encode.
 - Add environment-based config (`.env` files) once the app talks to a real backend.

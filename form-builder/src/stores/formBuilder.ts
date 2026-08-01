@@ -1,48 +1,49 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 
-import { createField, fieldPropertyKeys } from '@/fields/registry';
+import { createField, ensureUniqueKey, fieldPropertyKeys } from '@/fields/registry';
 import type { FieldType, FieldUpdate, FormField } from '@/fields/types';
 
 export const useFormBuilderStore = defineStore('formBuilder', () => {
   const fields = ref<FormField[]>([]);
-  const selectedKey = ref<string | null>(null);
+  const selectedId = ref<string | null>(null);
 
   const selectedField = computed(
-    () => fields.value.find((field) => field.key === selectedKey.value) ?? null,
+    () => fields.value.find((field) => field.id === selectedId.value) ?? null,
   );
 
   const addField = (type: FieldType) => {
     const field = createField(type);
+    field.key = ensureUniqueKey(field.key, new Set(fields.value.map((existing) => existing.key)));
     fields.value.push(field);
-    selectedKey.value = field.key;
+    selectedId.value = field.id;
   };
 
-  const removeField = (key: string) => {
-    const index = fields.value.findIndex((field) => field.key === key);
+  const removeField = (id: string) => {
+    const index = fields.value.findIndex((field) => field.id === id);
     if (index === -1) return;
 
     fields.value.splice(index, 1);
-    if (selectedKey.value === key) {
-      selectedKey.value = null;
+    if (selectedId.value === id) {
+      selectedId.value = null;
     }
   };
 
-  const selectField = (key: string | null) => {
-    selectedKey.value = key;
+  const selectField = (id: string | null) => {
+    selectedId.value = id;
   };
 
   const deselectField = () => {
-    selectedKey.value = null;
+    selectedId.value = null;
   };
 
-  // Takes an ordered list of keys rather than the reordered field objects
-  // themselves, so a malformed order (wrong length, unknown key) is caught
+  // Takes an ordered list of ids rather than the reordered field objects
+  // themselves, so a malformed order (wrong length, unknown id) is caught
   // here instead of silently dropping or duplicating a field.
   const reorderFields = (order: string[]) => {
-    const byKey = new Map(fields.value.map((field) => [field.key, field]));
+    const byId = new Map(fields.value.map((field) => [field.id, field]));
     const reordered = order
-      .map((key) => byKey.get(key))
+      .map((id) => byId.get(id))
       .filter((field): field is FormField => field !== undefined);
 
     if (reordered.length !== fields.value.length) {
@@ -77,7 +78,7 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
 
   return {
     fields,
-    selectedKey,
+    selectedId,
     selectedField,
     addField,
     deselectField,
