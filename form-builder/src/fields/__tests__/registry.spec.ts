@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
-import { createField, fieldPropertyKeys, fieldTypeDefinitions, fieldTypeList } from '../registry';
+import {
+  createField,
+  ensureUniqueKey,
+  fieldPropertyKeys,
+  fieldTypeDefinitions,
+  fieldTypeList,
+  toCamelCase,
+} from '../registry';
 
 describe('fieldTypeDefinitions', () => {
   it('lists one definition per field type', () => {
@@ -14,19 +21,20 @@ describe('fieldTypeDefinitions', () => {
 });
 
 describe('createField', () => {
-  it('generates a unique key per call', () => {
+  it('generates a unique id per call', () => {
     const first = createField('text');
     const second = createField('text');
 
-    expect(first.key).not.toBe(second.key);
+    expect(first.id).not.toBe(second.id);
   });
 
-  it('creates a text field with the registry default title and no type-specific values set', () => {
+  it('creates a text field with the registry default title, a matching default key, and no type-specific values set', () => {
     const field = createField('text');
 
     expect(field).toMatchObject({
       type: 'text',
       title: fieldTypeDefinitions.text.defaultTitle,
+      key: 'textField',
       required: false,
     });
   });
@@ -37,6 +45,7 @@ describe('createField', () => {
     expect(field).toMatchObject({
       type: 'number',
       title: fieldTypeDefinitions.number.defaultTitle,
+      key: 'numberField',
       required: false,
       isFloat: false,
     });
@@ -58,13 +67,31 @@ describe('createField', () => {
 describe('fieldPropertyKeys', () => {
   it('lists the updatable properties for each field type', () => {
     expect([...fieldPropertyKeys.text].sort()).toEqual(
-      ['maxLength', 'minLength', 'placeholder', 'required', 'title'].sort(),
+      ['key', 'maxLength', 'minLength', 'placeholder', 'required', 'title'].sort(),
     );
     expect([...fieldPropertyKeys.number].sort()).toEqual(
-      ['isFloat', 'max', 'min', 'required', 'title'].sort(),
+      ['isFloat', 'key', 'max', 'min', 'required', 'title'].sort(),
     );
     expect([...fieldPropertyKeys.selection].sort()).toEqual(
-      ['multiple', 'options', 'required', 'title'].sort(),
+      ['key', 'multiple', 'options', 'required', 'title'].sort(),
     );
+  });
+});
+
+describe('toCamelCase', () => {
+  it('lowercases the first word and capitalizes the start of subsequent words', () => {
+    expect(toCamelCase('Text field')).toBe('textField');
+    expect(toCamelCase('  full   name  ')).toBe('fullName');
+  });
+});
+
+describe('ensureUniqueKey', () => {
+  it('returns the base key unchanged when it is not taken', () => {
+    expect(ensureUniqueKey('title', new Set())).toBe('title');
+  });
+
+  it('appends an incrementing numeric suffix until the key is free', () => {
+    expect(ensureUniqueKey('title', new Set(['title']))).toBe('title2');
+    expect(ensureUniqueKey('title', new Set(['title', 'title2']))).toBe('title3');
   });
 });

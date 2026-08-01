@@ -19,20 +19,20 @@
       :force-fallback="true"
       :support-pointer="false"
     >
-      <template v-for="(field, index) in fields" :key="field.key">
+      <template v-for="(field, index) in fields" :key="field.id">
         <v-list-item
-          :active="field.key === formStore.selectedKey"
+          :active="field.id === formStore.selectedId"
           :title="field.title"
           :subtitle="fieldTypeDefinitions[field.type].label"
-          :data-cy="`field-list-item-${field.key}`"
+          :data-cy="`field-list-item-${field.id}`"
           class="my-1"
-          @click="formStore.selectField(field.key)"
+          @click="formStore.selectField(field.id)"
         >
           <template #prepend>
             <v-icon icon="mdi-drag-vertical" class="mr-1" />
             <span
               class="text-caption text-medium-emphasis mr-2"
-              :data-cy="`field-index-${field.key}`"
+              :data-cy="`field-index-${field.id}`"
             >
               {{ index + 1 }}
             </span>
@@ -46,8 +46,8 @@
               variant="text"
               class="field-remove-button"
               :aria-label="`Remove ${field.title}`"
-              :data-cy="`remove-field-button-${field.key}`"
-              @click.stop="formStore.removeField(field.key)"
+              :data-cy="`remove-field-button-${field.id}`"
+              @click.stop="formStore.removeField(field.id)"
             />
           </template>
         </v-list-item>
@@ -70,7 +70,7 @@ const formStore = useFormBuilderStore();
 // Computed
 const fields = computed({
   get: () => formStore.fields,
-  set: (value) => formStore.reorderFields(value.map((field) => field.key)),
+  set: (value) => formStore.reorderFields(value.map((field) => field.id)),
 });
 </script>
 

@@ -48,12 +48,12 @@ Requires Node 24.
 ```bash
 cd form-builder
 npm install
-npm run dev           # Vite dev server at localhost:5173
-npm run lint          # ESLint, autofixing
-npm run type-check    # vue-tsc
-npm run test:unit     # Vitest
-npm run test:e2e      # Cypress, against a production preview build
-npm run test:e2e:dev  # Cypress, interactive, against the dev server
+npm run dev          # Vite dev server at localhost:5173
+npm run lint         # ESLint, autofixing
+npm run type-check   # vue-tsc
+npm run test:unit    # Vitest
+npm run test:e2e     # Cypress, against a production preview build
+npm run test:e2e:dev # Cypress, interactive, against the dev server
 ```
 
 A pre-commit hook (Husky + lint-staged, configured at the repo root) runs ESLint and Prettier on staged files before every commit.
@@ -124,5 +124,4 @@ Note that no certificates have been configured for this project as it has no dom
 
 - Add Vitest component testing (`@vue/test-utils` mount tests) alongside the existing store unit tests.
 - Introduce per-route layouts if a second layout becomes necessary, rather than before.
-- Add a theming setup (Vuetify's theme system) once there's a design direction to encode.
 - Add environment-based config (`.env` files) once the app talks to a real backend.

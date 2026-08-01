@@ -24,17 +24,26 @@ describe('useFormBuilderStore', () => {
     expect(store.selectedField).toBe(store.fields[0]);
   });
 
+  it('gives fields of the same type distinct default keys', () => {
+    const store = useFormBuilderStore();
+
+    store.addField('text');
+    store.addField('text');
+
+    expect(store.fields[0]?.key).not.toBe(store.fields[1]?.key);
+  });
+
   it('selecting a later field replaces the current selection', () => {
     const store = useFormBuilderStore();
 
     store.addField('text');
     store.addField('number');
 
-    expect(store.selectedField?.key).toBe(store.fields[1]?.key);
+    expect(store.selectedField?.id).toBe(store.fields[1]?.id);
 
-    store.selectField(store.fields[0]?.key ?? null);
+    store.selectField(store.fields[0]?.id ?? null);
 
-    expect(store.selectedField?.key).toBe(store.fields[0]?.key);
+    expect(store.selectedField?.id).toBe(store.fields[0]?.id);
   });
 
   it('clears the selection when deselected', () => {
@@ -46,26 +55,26 @@ describe('useFormBuilderStore', () => {
     expect(store.selectedField).toBeNull();
   });
 
-  it('removes a field by key without disturbing the others', () => {
+  it('removes a field by id without disturbing the others', () => {
     const store = useFormBuilderStore();
 
     store.addField('text');
     store.addField('number');
     const [first, second] = store.fields;
 
-    store.removeField(first!.key);
+    store.removeField(first!.id);
 
     expect(store.fields).toHaveLength(1);
-    expect(store.fields[0]?.key).toBe(second!.key);
+    expect(store.fields[0]?.id).toBe(second!.id);
   });
 
   it('clears the selection when the selected field is removed', () => {
     const store = useFormBuilderStore();
 
     store.addField('text');
-    const key = store.fields[0]!.key;
+    const id = store.fields[0]!.id;
 
-    store.removeField(key);
+    store.removeField(id);
 
     expect(store.selectedField).toBeNull();
   });
@@ -75,21 +84,21 @@ describe('useFormBuilderStore', () => {
 
     store.addField('text');
     store.addField('number');
-    const selectedKey = store.selectedField!.key;
-    const otherKey = store.fields[0]!.key;
+    const selectedId = store.selectedField!.id;
+    const otherId = store.fields[0]!.id;
 
-    store.removeField(otherKey);
+    store.removeField(otherId);
 
-    expect(store.selectedField?.key).toBe(selectedKey);
+    expect(store.selectedField?.id).toBe(selectedId);
   });
 
   it('merges an update into the selected field', () => {
     const store = useFormBuilderStore();
 
     store.addField('text');
-    store.updateSelectedField({ title: 'Full name', minLength: 2 });
+    store.updateSelectedField({ key: 'newKey', title: 'Full name', minLength: 2 });
 
-    expect(store.selectedField).toMatchObject({ title: 'Full name', minLength: 2 });
+    expect(store.selectedField).toMatchObject({ key: 'newKey', title: 'Full name', minLength: 2 });
   });
 
   it('does nothing when there is no selected field', () => {
@@ -114,7 +123,7 @@ describe('useFormBuilderStore', () => {
     warnSpy.mockRestore();
   });
 
-  it('reorders fields to match the given key order', () => {
+  it('reorders fields to match the given id order', () => {
     const store = useFormBuilderStore();
 
     store.addField('text');
@@ -122,9 +131,9 @@ describe('useFormBuilderStore', () => {
     store.addField('selection');
     const [first, second, third] = store.fields;
 
-    store.reorderFields([third!.key, first!.key, second!.key]);
+    store.reorderFields([third!.id, first!.id, second!.id]);
 
-    expect(store.fields.map((field) => field.key)).toEqual([third!.key, first!.key, second!.key]);
+    expect(store.fields.map((field) => field.id)).toEqual([third!.id, first!.id, second!.id]);
   });
 
   it('preserves field object identity when reordering, not just values', () => {
@@ -134,7 +143,7 @@ describe('useFormBuilderStore', () => {
     store.addField('number');
     const [first, second] = store.fields;
 
-    store.reorderFields([second!.key, first!.key]);
+    store.reorderFields([second!.id, first!.id]);
 
     expect(store.fields[0]).toBe(second);
     expect(store.fields[1]).toBe(first);
@@ -147,27 +156,27 @@ describe('useFormBuilderStore', () => {
     store.addField('text');
     store.addField('number');
     const [first] = store.fields;
-    const originalOrder = store.fields.map((field) => field.key);
+    const originalOrder = store.fields.map((field) => field.id);
 
-    store.reorderFields([first!.key]);
+    store.reorderFields([first!.id]);
 
-    expect(store.fields.map((field) => field.key)).toEqual(originalOrder);
+    expect(store.fields.map((field) => field.id)).toEqual(originalOrder);
 
     warnSpy.mockRestore();
   });
 
-  it('ignores a reorder containing a key that does not belong to any current field', () => {
+  it('ignores a reorder containing an id that does not belong to any current field', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const store = useFormBuilderStore();
 
     store.addField('text');
     store.addField('number');
     const [first] = store.fields;
-    const originalOrder = store.fields.map((field) => field.key);
+    const originalOrder = store.fields.map((field) => field.id);
 
-    store.reorderFields([first!.key, 'not-a-real-key']);
+    store.reorderFields([first!.id, 'not-a-real-id']);
 
-    expect(store.fields.map((field) => field.key)).toEqual(originalOrder);
+    expect(store.fields.map((field) => field.id)).toEqual(originalOrder);
 
     warnSpy.mockRestore();
   });

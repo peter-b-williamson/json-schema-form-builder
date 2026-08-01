@@ -11,8 +11,9 @@ export interface SelectOption {
 }
 
 interface BaseField {
-  key: string;
+  id: string;
   title: string;
+  key: string;
   type: FieldType;
   required: boolean;
 }
@@ -43,5 +44,5 @@ export type FormField = TextField | NumberField | SelectionField;
 // `Omit<FormField, ...>` alone would collapse to the properties common to every
 // member, silently dropping type-specific ones like `minLength` or `options`.
 export type FieldUpdate<T extends FormField = FormField> = T extends FormField
-  ? Partial<Omit<T, 'key' | 'type'>>
+  ? Partial<Omit<T, 'id' | 'type'>>
   : never;

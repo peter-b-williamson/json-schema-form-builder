@@ -70,9 +70,9 @@ const onBackButtonClick = () => {
 // straight to its properties, mirroring the desktop layout where both panels are
 // always visible side by side.
 watch(
-  () => formStore.selectedKey,
-  (key) => {
-    if (!key) return;
+  () => formStore.selectedId,
+  (id) => {
+    if (!id) return;
     page.value = 1;
     showPalette.value = false;
   },
