@@ -1,20 +1,18 @@
 <template>
-  <Splitpanes class="three-column-layout" :horizontal="stacked" @resized="onResized">
-    <Pane :size="sizes[0]" min-size="10">
+  <Splitpanes class="three-column-layout" @resized="onResized">
+    <Pane :size="sizes[0]" min-size="20">
       <slot name="left" />
     </Pane>
-    <Pane :size="sizes[1]" min-size="20">
+    <Pane :size="sizes[1]" min-size="30">
       <slot name="center" />
     </Pane>
-    <Pane :size="sizes[2]" min-size="20">
+    <Pane :size="sizes[2]" min-size="30">
       <slot name="right" />
     </Pane>
   </Splitpanes>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useDisplay } from 'vuetify';
 import { Splitpanes, Pane } from 'splitpanes';
 import type { SplitpanesResizedPayload } from 'splitpanes';
 import 'splitpanes/dist/splitpanes.css';
@@ -35,11 +33,7 @@ const props = withDefaults(
 );
 
 // Composables
-const { mdAndDown } = useDisplay();
 const sizes = useLocalStorage<ThreeSizes>(props.storageKey, props.defaultSizes);
-
-// Computed
-const stacked = computed(() => mdAndDown.value);
 
 // Methods
 const onResized = (payload: SplitpanesResizedPayload) => {
@@ -59,19 +53,12 @@ const onResized = (payload: SplitpanesResizedPayload) => {
 }
 
 .three-column-layout :deep(.splitpanes__splitter) {
+  width: 6px;
   background-color: rgb(var(--v-theme-surface-variant));
   transition: background-color 0.2s ease;
 }
 
 .three-column-layout :deep(.splitpanes__splitter:hover) {
   background-color: rgb(var(--v-theme-primary));
-}
-
-.three-column-layout.splitpanes--vertical > :deep(.splitpanes__splitter) {
-  width: 6px;
-}
-
-.three-column-layout.splitpanes--horizontal > :deep(.splitpanes__splitter) {
-  height: 6px;
 }
 </style>
