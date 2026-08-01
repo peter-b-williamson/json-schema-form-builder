@@ -11,8 +11,33 @@
   <v-main>
     <slot />
   </v-main>
+
+  <v-fab
+    icon="mdi-download"
+    color="primary"
+    location="bottom end"
+    app
+    aria-label="Export schema"
+    data-cy="export-schema-button"
+    @click="isExportDialogOpen = true"
+  />
+
+  <ExportSchemaDialog v-model="isExportDialogOpen" />
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+
 import ThemeToggle from '@/components/ThemeToggle.vue';
+import ExportSchemaDialog from '@/components/ExportSchemaDialog.vue';
+
+// State
+const isExportDialogOpen = ref(false);
 </script>
+
+<style scoped>
+:deep(.v-fab__container) {
+  margin-right: 24px;
+  margin-bottom: 24px;
+}
+</style>
