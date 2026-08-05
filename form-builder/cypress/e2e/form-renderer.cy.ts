@@ -129,9 +129,9 @@ describe('Form renderer preview', () => {
 
       cy.get('[data-cy=add-condition-button]').click();
       cy.get('[data-cy^=condition-field-select-]').click();
-      cy.get('.v-list-item').contains('Selection field').click();
+      cy.get('.v-overlay__content .v-list-item').contains('Selection field').click();
       cy.get('[data-cy^=condition-values-select-]').click();
-      cy.get('.v-list-item').contains('Option 1').click();
+      cy.get('.v-overlay__content .v-list-item').contains('Option 1').click();
       cy.get('body').type('{esc}');
     });
 
