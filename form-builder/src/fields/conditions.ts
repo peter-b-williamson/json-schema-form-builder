@@ -1,7 +1,7 @@
 import type { FieldCondition, FormField } from './types';
 
 const matchesValue = (value: unknown, target: string): boolean =>
-  (!!value || value === 0) && value === target;
+  (!!value || value === 0) && String(value) === target;
 
 const evaluateRule = (
   rule: FieldCondition,

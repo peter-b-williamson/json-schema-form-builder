@@ -1,4 +1,4 @@
-import { isSelectionField } from './guards';
+import { isNumberField, isSelectionField } from './guards';
 import { ensureUniqueKey } from './registry';
 import type { ConditionGroup, FormField } from './types';
 
@@ -41,6 +41,9 @@ interface KeyedField {
   key: string;
 }
 
+const toComparableValue = (field: FormField, raw: string): unknown =>
+  isNumberField(field) ? Number(raw) : raw;
+
 // A condition's referenced value must be `required` alongside its `enum`/`contains` check -
 // without it, an instance that omits the referenced property entirely would trivially
 // satisfy `properties`, wrongly matching `if` even though nothing was ever selected.
@@ -57,10 +60,11 @@ const buildIfSchema = (
         const referenced = keyedFields.find(({ field }) => field.key === rule.field);
         if (!referenced) return;
 
+        const values = rule.values.map((value) => toComparableValue(referenced.field, value));
         properties[referenced.key] =
           isSelectionField(referenced.field) && referenced.field.multiple
-            ? { contains: { enum: rule.values } }
-            : { enum: rule.values };
+            ? { contains: { enum: values } }
+            : { enum: values };
         required.push(referenced.key);
       });
 

@@ -198,6 +198,27 @@ describe('generateJsonSchema', () => {
       ]);
     });
 
+    it('coerces rule values to numbers when the referenced field is a number field', () => {
+      const trigger: NumberField = { ...(createField('number') as NumberField), key: 'age' };
+      const dependent: TextField = {
+        ...(createField('text') as TextField),
+        key: 'guardianName',
+        conditions: {
+          operator: 'and',
+          rules: [{ id: 'rule-1', field: 'age', type: 'equals', values: ['17', '18'] }],
+        },
+      };
+
+      const schema = generateJsonSchema([trigger, dependent], GENERATED_AT);
+
+      expect(schema.allOf).toEqual([
+        {
+          if: { properties: { age: { enum: [17, 18] } }, required: ['age'] },
+          then: { properties: { guardianName: { title: dependent.title, type: 'string' } } },
+        },
+      ]);
+    });
+
     it('merges multiple rules into one if.properties/required object', () => {
       const country: SelectionField = {
         ...(createField('selection') as SelectionField),
