@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 
+import { remapConditionReferences } from '@/fields/conditions';
 import { createField, ensureUniqueKey, fieldPropertyKeys } from '@/fields/registry';
 import { useUndoableFormHistory } from '@/composables/useUndoableFormHistory';
 import type { FieldType, FieldUpdate, FormField } from '@/fields/types';
@@ -28,6 +29,9 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     if (index === -1) return;
 
     commit();
+
+    const removedKey = fields.value[index]!.key;
+    remapConditionReferences(fields.value, id, removedKey, '');
 
     fields.value.splice(index, 1);
     if (selectedId.value === id) {
@@ -84,6 +88,10 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     // keystroke in its title) becomes one undo step rather than one per keystroke.
     if (Object.keys(safeUpdates).length > 0) {
       commit(field.id);
+    }
+
+    if (typeof safeUpdates.key === 'string' && safeUpdates.key !== field.key) {
+      remapConditionReferences(fields.value, field.id, field.key, safeUpdates.key);
     }
 
     Object.assign(field, safeUpdates);

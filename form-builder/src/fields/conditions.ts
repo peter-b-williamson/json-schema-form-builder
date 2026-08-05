@@ -22,6 +22,20 @@ const evaluateRule = (
   }
 };
 
+export const remapConditionReferences = (
+  fields: FormField[],
+  excludeId: string,
+  oldKey: string,
+  newKey: string,
+): void => {
+  fields.forEach((field) => {
+    if (field.id === excludeId || !field.conditions) return;
+    field.conditions.rules = field.conditions.rules.map((rule) =>
+      rule.field === oldKey ? { ...rule, field: newKey } : rule,
+    );
+  });
+};
+
 export const isFieldVisible = (
   field: FormField,
   fields: FormField[],

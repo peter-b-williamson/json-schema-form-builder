@@ -3,7 +3,7 @@
     <template v-if="fields.length">
       <v-form ref="formRef" class="d-flex flex-column ga-4" data-cy="form-renderer-form">
         <template v-for="(field, index) in fields" :key="field.id">
-          <div class="d-flex align-center ga-2">
+          <div v-if="isVisible(field)" class="d-flex align-center ga-2">
             <span class="text-caption text-medium-emphasis" :data-cy="`preview-index-${field.id}`">
               {{ index + 1 }}
             </span>
@@ -55,8 +55,10 @@
 import { computed, reactive, ref } from 'vue';
 import type { VForm } from 'vuetify/components';
 
+import { isFieldVisible } from '@/fields/conditions';
 import { isNumberField, isSelectionField, isTextField } from '@/fields/guards';
 import { useFormBuilderStore } from '@/stores/formBuilder';
+import type { FormField } from '@/fields/types';
 
 import NumberFieldRenderer from '@/components/fieldRenderers/NumberFieldRenderer.vue';
 import SelectionFieldRenderer from '@/components/fieldRenderers/SelectionFieldRenderer.vue';
@@ -78,6 +80,8 @@ const formRef = ref<VForm>();
 const fields = computed(() => formStore.fields);
 
 // Methods
+const isVisible = (field: FormField) => isFieldVisible(field, fields.value, values);
+
 const onFieldFocused = (focused: boolean, id: string) => {
   if (focused && props.selectOnFocus) formStore.selectField(id);
 };

@@ -12,6 +12,8 @@
     <TextFieldEditor v-if="isTextField(selectedField)" :field="selectedField" />
     <NumberFieldEditor v-else-if="isNumberField(selectedField)" :field="selectedField" />
     <SelectionFieldEditor v-else-if="isSelectionField(selectedField)" :field="selectedField" />
+
+    <FieldConditionEditor :field="selectedField" />
   </div>
 
   <p
@@ -30,6 +32,7 @@ import { useFieldPropertyModel } from '@/composables/useFieldPropertyModel';
 import { isNumberField, isSelectionField, isTextField } from '@/fields/guards';
 import { useFormBuilderStore } from '@/stores/formBuilder';
 
+import FieldConditionEditor from '@/components/propertyEditors/FieldConditionEditor.vue';
 import NumberFieldEditor from '@/components/propertyEditors/NumberFieldEditor.vue';
 import SelectionFieldEditor from '@/components/propertyEditors/SelectionFieldEditor.vue';
 import TextFieldEditor from '@/components/propertyEditors/TextFieldEditor.vue';
