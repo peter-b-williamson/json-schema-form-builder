@@ -43,6 +43,7 @@ const textFieldKeys: PropertyKeys<TextField> = {
   title: true,
   key: true,
   required: true,
+  conditions: true,
   minLength: true,
   maxLength: true,
   placeholder: true,
@@ -52,6 +53,7 @@ const numberFieldKeys: PropertyKeys<NumberField> = {
   title: true,
   key: true,
   required: true,
+  conditions: true,
   min: true,
   max: true,
   isFloat: true,
@@ -61,6 +63,7 @@ const selectionFieldKeys: PropertyKeys<SelectionField> = {
   title: true,
   key: true,
   required: true,
+  conditions: true,
   options: true,
   multiple: true,
 };
