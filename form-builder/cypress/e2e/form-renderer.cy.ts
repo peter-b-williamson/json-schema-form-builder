@@ -120,4 +120,43 @@ describe('Form renderer preview', () => {
 
     cy.get('[data-cy=field-title-input] input').should('have.value', 'Text field');
   });
+
+  describe('conditional fields', () => {
+    beforeEach(() => {
+      cy.get('[data-cy=add-field-selection]').click();
+      cy.get('[data-cy=add-option-button]').click();
+      cy.get('[data-cy=add-field-text]').click();
+
+      cy.get('[data-cy=add-condition-button]').click();
+      cy.get('[data-cy^=condition-field-select-]').click();
+      cy.get('.v-overlay__content .v-list-item').contains('Selection field').click();
+      cy.get('[data-cy^=condition-values-select-]').click();
+      cy.get('.v-overlay__content .v-list-item').contains('Option 1').click();
+      cy.get('body').type('{esc}');
+    });
+
+    it('hides a field until the field it depends on matches, and hides it again once it stops matching', () => {
+      cy.get('[data-cy=center-tab-preview]').click();
+      cy.get('[data-cy^=preview-field-]').should('have.length', 1);
+
+      cy.get('[data-cy^=preview-field-]').click();
+      cy.get('.v-list-item').contains('Option 1').click();
+      cy.get('[data-cy^=preview-field-]').should('have.length', 2);
+
+      cy.get('[data-cy^=preview-field-]').eq(0).click();
+      cy.get('.v-list-item').contains('Option 2').click();
+      cy.get('[data-cy^=preview-field-]').should('have.length', 1);
+    });
+
+    it('shows the field again once its only condition is removed', () => {
+      cy.get('[data-cy=center-tab-preview]').click();
+      cy.get('[data-cy^=preview-field-]').should('have.length', 1);
+
+      cy.get('[data-cy=center-tab-fields]').click();
+      cy.get('[data-cy^=remove-condition-button-]').click();
+
+      cy.get('[data-cy=center-tab-preview]').click();
+      cy.get('[data-cy^=preview-field-]').should('have.length', 2);
+    });
+  });
 });

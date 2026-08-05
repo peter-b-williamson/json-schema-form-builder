@@ -1,5 +1,6 @@
+import { isNumberField, isSelectionField } from './guards';
 import { ensureUniqueKey } from './registry';
-import type { FormField } from './types';
+import type { ConditionGroup, FormField } from './types';
 
 export const JSON_SCHEMA_DIALECT = 'https://json-schema.org/draft/2020-12/schema';
 
@@ -35,20 +36,76 @@ const fieldToPropertySchema = (field: FormField): Record<string, unknown> => {
   }
 };
 
+interface KeyedField {
+  field: FormField;
+  key: string;
+}
+
+const toComparableValue = (field: FormField, raw: string): unknown =>
+  isNumberField(field) ? Number(raw) : raw;
+
+// A condition's referenced value must be `required` alongside its `enum`/`contains` check -
+// without it, an instance that omits the referenced property entirely would trivially
+// satisfy `properties`, wrongly matching `if` even though nothing was ever selected.
+const buildIfSchema = (
+  group: ConditionGroup,
+  keyedFields: KeyedField[],
+): Record<string, unknown> | null => {
+  switch (group.operator) {
+    case 'and': {
+      const properties: Record<string, unknown> = {};
+      const required: string[] = [];
+
+      group.rules.forEach((rule) => {
+        const referenced = keyedFields.find(({ field }) => field.key === rule.field);
+        if (!referenced) return;
+
+        const values = rule.values.map((value) => toComparableValue(referenced.field, value));
+        properties[referenced.key] =
+          isSelectionField(referenced.field) && referenced.field.multiple
+            ? { contains: { enum: values } }
+            : { enum: values };
+        required.push(referenced.key);
+      });
+
+      return Object.keys(properties).length > 0 ? { properties, required } : null;
+    }
+  }
+};
+
 // `generatedAt` defaults to the real current time but can be overridden for testing
 export const generateJsonSchema = (
   fields: FormField[],
   generatedAt: Date = new Date(),
 ): Record<string, unknown> => {
   const usedKeys = new Set<string>();
-  const properties: Record<string, unknown> = {};
-  const required: string[] = [];
-
-  fields.forEach((field) => {
+  const keyedFields: KeyedField[] = fields.map((field) => {
     const key = ensureUniqueKey(field.key, usedKeys);
     usedKeys.add(key);
-    properties[key] = fieldToPropertySchema(field);
-    if (field.required) required.push(key);
+    return { field, key };
+  });
+
+  const properties: Record<string, unknown> = {};
+  const required: string[] = [];
+  const allOf: Record<string, unknown>[] = [];
+
+  keyedFields.forEach(({ field, key }) => {
+    const group = field.conditions;
+    const ifSchema = group && group.rules.length > 0 ? buildIfSchema(group, keyedFields) : null;
+
+    if (!ifSchema) {
+      properties[key] = fieldToPropertySchema(field);
+      if (field.required) required.push(key);
+      return;
+    }
+
+    allOf.push({
+      if: ifSchema,
+      then: {
+        properties: { [key]: fieldToPropertySchema(field) },
+        ...(field.required && { required: [key] }),
+      },
+    });
   });
 
   return {
@@ -57,5 +114,6 @@ export const generateJsonSchema = (
     type: 'object',
     properties,
     ...(required.length > 0 && { required }),
+    ...(allOf.length > 0 && { allOf }),
   };
 };

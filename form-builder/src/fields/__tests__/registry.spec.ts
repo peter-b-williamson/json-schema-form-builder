@@ -67,13 +67,13 @@ describe('createField', () => {
 describe('fieldPropertyKeys', () => {
   it('lists the updatable properties for each field type', () => {
     expect([...fieldPropertyKeys.text].sort()).toEqual(
-      ['key', 'maxLength', 'minLength', 'placeholder', 'required', 'title'].sort(),
+      ['conditions', 'key', 'maxLength', 'minLength', 'placeholder', 'required', 'title'].sort(),
     );
     expect([...fieldPropertyKeys.number].sort()).toEqual(
-      ['isFloat', 'key', 'max', 'min', 'required', 'title'].sort(),
+      ['conditions', 'isFloat', 'key', 'max', 'min', 'required', 'title'].sort(),
     );
     expect([...fieldPropertyKeys.selection].sort()).toEqual(
-      ['key', 'multiple', 'options', 'required', 'title'].sort(),
+      ['conditions', 'key', 'multiple', 'options', 'required', 'title'].sort(),
     );
   });
 });

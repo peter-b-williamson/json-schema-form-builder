@@ -10,12 +10,28 @@ export interface SelectOption {
   value: string;
 }
 
+export type ConditionType = 'equals';
+export type ConditionOperator = 'and';
+
+export interface FieldCondition {
+  id: string;
+  field: string;
+  type: ConditionType;
+  values: string[];
+}
+
+export interface ConditionGroup {
+  operator: ConditionOperator;
+  rules: FieldCondition[];
+}
+
 interface BaseField {
   id: string;
   title: string;
   key: string;
   type: FieldType;
   required: boolean;
+  conditions?: ConditionGroup;
 }
 
 export interface TextField extends BaseField {

@@ -108,6 +108,45 @@ describe('useFormBuilderStore', () => {
     expect(store.selectedField).toBeNull();
   });
 
+  it('clears a rule referencing a removed field, without touching rules on other fields', () => {
+    const store = useFormBuilderStore();
+
+    store.addField('selection');
+    const dependency = store.fields[0]!;
+    store.addField('text');
+    store.selectField(store.fields[1]!.id);
+    store.updateSelectedField({
+      conditions: {
+        operator: 'and',
+        rules: [{ id: 'rule-1', field: dependency.key, type: 'equals', values: ['option_1'] }],
+      },
+    });
+
+    store.removeField(dependency.id);
+
+    expect(store.fields[0]!.conditions?.rules[0]?.field).toBe('');
+  });
+
+  it('rewrites a rule when the field it depends on is renamed', () => {
+    const store = useFormBuilderStore();
+
+    store.addField('selection');
+    const dependency = store.fields[0]!;
+    store.addField('text');
+    store.selectField(store.fields[1]!.id);
+    store.updateSelectedField({
+      conditions: {
+        operator: 'and',
+        rules: [{ id: 'rule-1', field: dependency.key, type: 'equals', values: ['option_1'] }],
+      },
+    });
+
+    store.selectField(dependency.id);
+    store.updateSelectedField({ key: 'renamedDependency' });
+
+    expect(store.fields[1]!.conditions?.rules[0]?.field).toBe('renamedDependency');
+  });
+
   it('ignores properties that do not belong to the selected field type', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const store = useFormBuilderStore();

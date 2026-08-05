@@ -112,4 +112,166 @@ describe('generateJsonSchema', () => {
 
     expect(Object.keys(schema.properties as object)).toEqual(['name', 'name2']);
   });
+
+  describe('conditional fields', () => {
+    it('moves a conditional field into allOf[].then instead of top-level properties', () => {
+      const trigger: SelectionField = {
+        ...(createField('selection') as SelectionField),
+        key: 'country',
+      };
+      const dependent: TextField = {
+        ...(createField('text') as TextField),
+        key: 'state',
+        conditions: {
+          operator: 'and',
+          rules: [{ id: 'rule-1', field: 'country', type: 'equals', values: ['option_1'] }],
+        },
+      };
+
+      const schema = generateJsonSchema([trigger, dependent], GENERATED_AT);
+
+      expect(schema.properties).toEqual({
+        country: { title: trigger.title, enum: ['option_1'] },
+      });
+      expect(schema.allOf).toEqual([
+        {
+          if: { properties: { country: { enum: ['option_1'] } }, required: ['country'] },
+          then: { properties: { state: { title: dependent.title, type: 'string' } } },
+        },
+      ]);
+    });
+
+    it('adds the dependent key to the then branch required array when the field itself is required', () => {
+      const trigger: SelectionField = {
+        ...(createField('selection') as SelectionField),
+        key: 'country',
+      };
+      const dependent: TextField = {
+        ...(createField('text') as TextField),
+        key: 'state',
+        required: true,
+        conditions: {
+          operator: 'and',
+          rules: [{ id: 'rule-1', field: 'country', type: 'equals', values: ['option_1'] }],
+        },
+      };
+
+      const schema = generateJsonSchema([trigger, dependent], GENERATED_AT);
+
+      expect(schema.allOf).toEqual([
+        {
+          if: { properties: { country: { enum: ['option_1'] } }, required: ['country'] },
+          then: {
+            properties: { state: { title: dependent.title, type: 'string' } },
+            required: ['state'],
+          },
+        },
+      ]);
+      expect(schema).not.toHaveProperty('required');
+    });
+
+    it('uses "contains" instead of "enum" when the referenced field is a multi-select', () => {
+      const trigger: SelectionField = {
+        ...(createField('selection') as SelectionField),
+        key: 'tags',
+        multiple: true,
+      };
+      const dependent: TextField = {
+        ...(createField('text') as TextField),
+        key: 'note',
+        conditions: {
+          operator: 'and',
+          rules: [{ id: 'rule-1', field: 'tags', type: 'equals', values: ['urgent'] }],
+        },
+      };
+
+      const schema = generateJsonSchema([trigger, dependent], GENERATED_AT);
+
+      expect(schema.allOf).toEqual([
+        {
+          if: {
+            properties: { tags: { contains: { enum: ['urgent'] } } },
+            required: ['tags'],
+          },
+          then: { properties: { note: { title: dependent.title, type: 'string' } } },
+        },
+      ]);
+    });
+
+    it('coerces rule values to numbers when the referenced field is a number field', () => {
+      const trigger: NumberField = { ...(createField('number') as NumberField), key: 'age' };
+      const dependent: TextField = {
+        ...(createField('text') as TextField),
+        key: 'guardianName',
+        conditions: {
+          operator: 'and',
+          rules: [{ id: 'rule-1', field: 'age', type: 'equals', values: ['17', '18'] }],
+        },
+      };
+
+      const schema = generateJsonSchema([trigger, dependent], GENERATED_AT);
+
+      expect(schema.allOf).toEqual([
+        {
+          if: { properties: { age: { enum: [17, 18] } }, required: ['age'] },
+          then: { properties: { guardianName: { title: dependent.title, type: 'string' } } },
+        },
+      ]);
+    });
+
+    it('merges multiple rules into one if.properties/required object', () => {
+      const country: SelectionField = {
+        ...(createField('selection') as SelectionField),
+        key: 'country',
+      };
+      const plan: SelectionField = { ...(createField('selection') as SelectionField), key: 'plan' };
+      const dependent: TextField = {
+        ...(createField('text') as TextField),
+        key: 'vatNumber',
+        conditions: {
+          operator: 'and',
+          rules: [
+            { id: 'rule-1', field: 'country', type: 'equals', values: ['option_1'] },
+            { id: 'rule-2', field: 'plan', type: 'equals', values: ['option_1'] },
+          ],
+        },
+      };
+
+      const schema = generateJsonSchema([country, plan, dependent], GENERATED_AT);
+
+      expect(schema.allOf).toEqual([
+        {
+          if: {
+            properties: { country: { enum: ['option_1'] }, plan: { enum: ['option_1'] } },
+            required: ['country', 'plan'],
+          },
+          then: { properties: { vatNumber: { title: dependent.title, type: 'string' } } },
+        },
+      ]);
+    });
+
+    it('treats a field with no rules, or with an unresolvable reference, as unconditional', () => {
+      const emptyGroup: TextField = {
+        ...(createField('text') as TextField),
+        key: 'a',
+        conditions: { operator: 'and', rules: [] },
+      };
+      const danglingRule: TextField = {
+        ...(createField('text') as TextField),
+        key: 'b',
+        conditions: {
+          operator: 'and',
+          rules: [{ id: 'rule-1', field: 'missing', type: 'equals', values: ['x'] }],
+        },
+      };
+
+      const schema = generateJsonSchema([emptyGroup, danglingRule], GENERATED_AT);
+
+      expect(schema.properties).toEqual({
+        a: { title: emptyGroup.title, type: 'string' },
+        b: { title: danglingRule.title, type: 'string' },
+      });
+      expect(schema).not.toHaveProperty('allOf');
+    });
+  });
 });
