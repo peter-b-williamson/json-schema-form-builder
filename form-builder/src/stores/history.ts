@@ -53,5 +53,12 @@ export const useHistoryStore = defineStore('history', () => {
     return next;
   };
 
-  return { past, future, canUndo, canRedo, record, undo, redo };
+  const clear = () => {
+    past.value = [];
+    future.value = [];
+    coalesceKey.value = null;
+    coalesceUntil.value = 0;
+  };
+
+  return { past, future, canUndo, canRedo, record, undo, redo, clear };
 });

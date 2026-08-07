@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "fullName": { "title": "Full name", "type": "string" },
+    "isActive": { "type": "boolean" },
+    "email": { "title": "Email", "type": "string", "format": "email" }
+  }
+}

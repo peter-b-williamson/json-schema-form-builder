@@ -36,5 +36,5 @@ export const useUndoableFormHistory = (
     selectedId.value = next.selectedId;
   };
 
-  return { commit, undo, redo, canUndo, canRedo };
+  return { commit, undo, redo, clear: history.clear, canUndo, canRedo };
 };
