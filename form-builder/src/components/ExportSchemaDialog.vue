@@ -10,6 +10,17 @@
         data-cy="export-filename-input"
         @keyup.enter="onDownloadClick"
       />
+      <v-alert
+        v-if="formStore.hasInvalidFields"
+        type="error"
+        density="compact"
+        variant="tonal"
+        class="mb-2"
+        data-cy="export-validation-error"
+      >
+        {{ formStore.invalidFieldIds.size }} field(s) have validation errors and can't be exported.
+        Fix them in the field list first.
+      </v-alert>
       <v-card-actions class="mx-n2">
         <v-spacer />
         <v-btn
@@ -26,6 +37,7 @@
           color="primary"
           variant="flat"
           prepend-icon="mdi-download"
+          :disabled="formStore.hasInvalidFields"
           data-cy="export-download-button"
           @click="onDownloadClick"
         />
@@ -52,10 +64,12 @@ const formStore = useFormBuilderStore();
 // State
 const filename = ref(DEFAULT_FILENAME);
 
-// Resets the filename each time the dialog opens, rather than leaving the
-// previous export's name behind for the next one.
+// Resets the filename each time the dialog opens, show all deferred errors
 watch(isOpen, (open) => {
-  if (open) filename.value = DEFAULT_FILENAME;
+  if (!open) return;
+
+  filename.value = DEFAULT_FILENAME;
+  if (formStore.hasInvalidFields) formStore.markAllTouched();
 });
 
 // Methods
@@ -64,6 +78,11 @@ const onCancelClick = () => {
 };
 
 const onDownloadClick = () => {
+  if (formStore.hasInvalidFields) {
+    formStore.markAllTouched();
+    return;
+  }
+
   const trimmed = filename.value.trim() || DEFAULT_FILENAME;
   const resolvedFilename = trimmed.endsWith(SCHEMA_FILE_SUFFIX)
     ? trimmed

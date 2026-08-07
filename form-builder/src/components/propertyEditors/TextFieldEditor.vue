@@ -4,17 +4,20 @@
     v-model.number="minLength"
     label="Minimum length"
     type="number"
+    :error-messages="messagesFor('minLength')"
     data-cy="field-min-length-input"
   />
   <v-text-field
     v-model.number="maxLength"
     label="Maximum length"
     type="number"
+    :error-messages="messagesFor('maxLength')"
     data-cy="field-max-length-input"
   />
 </template>
 
 <script setup lang="ts">
+import { useFieldPropertyErrors } from '@/composables/useFieldPropertyErrors';
 import { useFieldPropertyModel } from '@/composables/useFieldPropertyModel';
 import { useFormBuilderStore } from '@/stores/formBuilder';
 import type { TextField } from '@/fields/types';
@@ -24,6 +27,11 @@ const props = defineProps<{ field: TextField }>();
 
 // Composables
 const formStore = useFormBuilderStore();
+const { messagesFor } = useFieldPropertyErrors(
+  () => props.field,
+  () => formStore.fields,
+  () => formStore.touchedFieldIds.has(props.field.id),
+);
 
 // Computed
 const placeholder = useFieldPropertyModel(

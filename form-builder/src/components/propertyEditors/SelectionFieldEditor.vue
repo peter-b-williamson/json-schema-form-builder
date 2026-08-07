@@ -20,6 +20,10 @@
       />
     </div>
 
+    <p v-if="optionsError" class="text-caption text-error" data-cy="options-error">
+      {{ optionsError }}
+    </p>
+
     <VueDraggable
       v-model="options"
       tag="div"
@@ -75,9 +79,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
+import { useFieldPropertyErrors } from '@/composables/useFieldPropertyErrors';
 import { useFieldPropertyModel } from '@/composables/useFieldPropertyModel';
 import { useFormBuilderStore } from '@/stores/formBuilder';
 import type { SelectionField, SelectOption } from '@/fields/types';
@@ -87,6 +92,11 @@ const props = defineProps<{ field: SelectionField }>();
 
 // Composables
 const formStore = useFormBuilderStore();
+const { messagesFor } = useFieldPropertyErrors(
+  () => props.field,
+  () => formStore.fields,
+  () => formStore.touchedFieldIds.has(props.field.id),
+);
 
 // Computed
 const multiple = useFieldPropertyModel(
@@ -95,6 +105,7 @@ const multiple = useFieldPropertyModel(
   formStore.updateSelectedField,
 );
 const options = useFieldPropertyModel(() => props.field, 'options', formStore.updateSelectedField);
+const optionsError = computed(() => messagesFor('options')[0] ?? null);
 
 // State
 const nextOptionNumber = ref(props.field.options.length + 1);

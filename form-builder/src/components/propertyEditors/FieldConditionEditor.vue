@@ -32,7 +32,7 @@
     </p>
 
     <div
-      v-for="{ rule, referenced } in decoratedRules"
+      v-for="{ rule, referenced, fieldErrors, valueErrors } in decoratedRules"
       :key="rule.id"
       class="d-flex flex-column ga-2"
       :data-cy="`condition-row-${rule.id}`"
@@ -45,7 +45,8 @@
           item-value="key"
           label="Depends on field"
           density="compact"
-          hide-details
+          hide-details="auto"
+          :error-messages="fieldErrors"
           :data-cy="`condition-field-select-${rule.id}`"
           @update:model-value="(value: string) => updateRule(rule.id, { field: value, values: [] })"
         />
@@ -78,7 +79,8 @@
         chips
         label="Values"
         density="compact"
-        hide-details
+        hide-details="auto"
+        :error-messages="valueErrors"
         :data-cy="`condition-values-select-${rule.id}`"
         @update:model-value="(value: string[]) => updateRule(rule.id, { values: value })"
       />
@@ -89,7 +91,8 @@
         chips
         label="Values"
         density="compact"
-        hide-details
+        hide-details="auto"
+        :error-messages="valueErrors"
         :disabled="!referenced"
         :data-cy="`condition-values-combobox-${rule.id}`"
         @update:model-value="(value: string[]) => updateRule(rule.id, { values: value })"
@@ -101,6 +104,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import { useFieldPropertyErrors } from '@/composables/useFieldPropertyErrors';
 import { isSelectionField } from '@/fields/guards';
 import { useFormBuilderStore } from '@/stores/formBuilder';
 import type { FieldCondition, FormField } from '@/fields/types';
@@ -110,6 +114,11 @@ const props = defineProps<{ field: FormField }>();
 
 // Composables
 const formStore = useFormBuilderStore();
+const { messagesFor } = useFieldPropertyErrors(
+  () => props.field,
+  () => formStore.fields,
+  () => formStore.touchedFieldIds.has(props.field.id),
+);
 
 // Computed
 const otherFields = computed(() => formStore.fields.filter((field) => field.id !== props.field.id));
@@ -121,6 +130,8 @@ const decoratedRules = computed(() =>
   rules.value.map((rule) => ({
     rule,
     referenced: otherFields.value.find((candidate) => candidate.key === rule.field) ?? null,
+    fieldErrors: messagesFor(`condition:${rule.id}:field`),
+    valueErrors: messagesFor(`condition:${rule.id}:values`),
   })),
 );
 

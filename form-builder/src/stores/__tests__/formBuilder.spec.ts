@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useFormBuilderStore } from '../formBuilder';
+import type { SelectionField } from '@/fields/types';
 
 describe('useFormBuilderStore', () => {
   beforeEach(() => {
@@ -370,6 +371,150 @@ describe('useFormBuilderStore', () => {
         store.undo();
         expect(store.fields.find((field) => field.id === first!.id)?.title).toBe('Text field');
       });
+    });
+  });
+
+  describe('validity', () => {
+    it('has no invalid fields for a freshly-added field', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('number');
+
+      expect(store.hasInvalidFields).toBe(false);
+      expect(store.invalidFieldIds.size).toBe(0);
+    });
+
+    it('flags a field whose properties fail validation', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('number');
+      store.updateSelectedField({ min: 10, max: 5 });
+
+      expect(store.hasInvalidFields).toBe(true);
+      expect(store.invalidFieldIds.has(store.fields[0]!.id)).toBe(true);
+    });
+
+    it('clears once the offending property is fixed', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('number');
+      store.updateSelectedField({ min: 10, max: 5 });
+      store.updateSelectedField({ max: 20 });
+
+      expect(store.hasInvalidFields).toBe(false);
+    });
+
+    it('flags a selection field with no options', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('selection');
+      store.updateSelectedField({ options: [] });
+
+      expect(store.hasInvalidFields).toBe(true);
+    });
+  });
+
+  describe('selection option pruning on leaving the field', () => {
+    const addBlankOption = (store: ReturnType<typeof useFormBuilderStore>) => {
+      const field = store.selectedField as SelectionField;
+      store.updateSelectedField({
+        options: [...field.options, { id: 'blank', label: '', value: '' }],
+      });
+    };
+
+    it('drops an option with no label or value when selecting a different field', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.addField('selection');
+      addBlankOption(store);
+
+      store.selectField(store.fields[0]!.id);
+
+      const selection = store.fields[1] as SelectionField;
+      expect(selection.options).toHaveLength(1);
+    });
+
+    it('drops an option with no label or value when a new field is added', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('selection');
+      addBlankOption(store);
+
+      store.addField('text');
+
+      const selection = store.fields[0] as SelectionField;
+      expect(selection.options).toHaveLength(1);
+    });
+
+    it('drops an option with no label or value when deselecting', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('selection');
+      addBlankOption(store);
+      store.deselectField();
+
+      const selection = store.fields[0] as SelectionField;
+      expect(selection.options).toHaveLength(1);
+    });
+
+    it('keeps options that have both a label and a value', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('selection');
+      store.deselectField();
+
+      const selection = store.fields[0] as SelectionField;
+      expect(selection.options).toHaveLength(1);
+    });
+  });
+
+  describe('touchedFieldIds', () => {
+    it('starts empty', () => {
+      const store = useFormBuilderStore();
+
+      expect(store.touchedFieldIds.size).toBe(0);
+    });
+
+    it('touches the field being left when selecting a different one', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      const first = store.fields[0]!.id;
+      store.addField('number');
+
+      expect(store.touchedFieldIds.has(first)).toBe(true);
+    });
+
+    it('touches the field being left when deselecting', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      const id = store.fields[0]!.id;
+      store.deselectField();
+
+      expect(store.touchedFieldIds.has(id)).toBe(true);
+    });
+
+    it('does not touch a field while it remains selected', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      const id = store.fields[0]!.id;
+
+      expect(store.touchedFieldIds.has(id)).toBe(false);
+    });
+
+    it('touches every current field via markAllTouched', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.addField('number');
+      const ids = store.fields.map((field) => field.id);
+
+      store.markAllTouched();
+
+      expect(ids.every((id) => store.touchedFieldIds.has(id))).toBe(true);
     });
   });
 });
