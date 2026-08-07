@@ -1,6 +1,6 @@
 import { isNumberField, isSelectionField } from './guards';
 import { ensureUniqueKey } from './registry';
-import type { ConditionGroup, FormField } from './types';
+import type { ConditionGroup, FieldCondition, FormField, SelectOption } from './types';
 
 export const JSON_SCHEMA_DIALECT = 'https://json-schema.org/draft/2020-12/schema';
 
@@ -116,4 +116,272 @@ export const generateJsonSchema = (
     ...(required.length > 0 && { required }),
     ...(allOf.length > 0 && { allOf }),
   };
+};
+
+export class SchemaImportError extends Error {}
+
+export interface ParsedSchemaResult {
+  fields: FormField[];
+  ignored: string[];
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+
+const KNOWN_ROOT_KEYS = new Set([
+  '$schema',
+  '$comment',
+  '$id',
+  'type',
+  'title',
+  'description',
+  'properties',
+  'required',
+  'allOf',
+]);
+
+const parseEnumOptions = (rawEnum: unknown[]): SelectOption[] =>
+  rawEnum
+    .filter(
+      (entry): entry is string | number | boolean =>
+        typeof entry === 'string' || typeof entry === 'number' || typeof entry === 'boolean',
+    )
+    .map((entry) => {
+      const value = String(entry);
+      return { id: crypto.randomUUID(), label: value, value };
+    });
+
+const reportUnknownKeys = (
+  raw: Record<string, unknown>,
+  consumed: ReadonlySet<string>,
+  propertyLabel: string,
+  ignored: string[],
+): void => {
+  const unknown = Object.keys(raw).filter((key) => !consumed.has(key));
+  if (unknown.length > 0) {
+    ignored.push(
+      `Property "${propertyLabel}": ignored unsupported keyword(s) "${unknown.join(', ')}"`,
+    );
+  }
+};
+
+const BASE_CONSUMED_KEYS = new Set(['title', 'ui']);
+
+const NO_UI_HINTS: ReadonlySet<string> = new Set();
+const TEXT_UI_HINT_KEYS: ReadonlySet<string> = new Set(['placeholder']);
+
+const parseUiHints = (
+  raw: Record<string, unknown>,
+  knownKeys: ReadonlySet<string>,
+  propertyLabel: string,
+  ignored: string[],
+): Record<string, string> => {
+  if (raw.ui === undefined) return {};
+  if (!isRecord(raw.ui)) {
+    ignored.push(`Property "${propertyLabel}": ignored unrecognized "ui" value`);
+    return {};
+  }
+
+  const hints: Record<string, string> = {};
+  const unknownUiKeys: string[] = [];
+
+  Object.entries(raw.ui).forEach(([hintKey, hintValue]) => {
+    if (knownKeys.has(hintKey) && typeof hintValue === 'string') {
+      hints[hintKey] = hintValue;
+    } else {
+      unknownUiKeys.push(hintKey);
+    }
+  });
+
+  if (unknownUiKeys.length > 0) {
+    ignored.push(
+      `Property "${propertyLabel}": ignored unsupported ui hint(s) "${unknownUiKeys.join(', ')}"`,
+    );
+  }
+
+  return hints;
+};
+
+const parsePropertySchema = (
+  key: string,
+  rawValue: unknown,
+  ignored: string[],
+): FormField | null => {
+  if (!isRecord(rawValue)) {
+    ignored.push(`Property "${key}": not a valid schema object, skipped`);
+    return null;
+  }
+
+  const title = typeof rawValue.title === 'string' && rawValue.title.trim() ? rawValue.title : key;
+  const base = { id: crypto.randomUUID(), key, title, required: false };
+
+  const items = rawValue.items;
+  if (rawValue.type === 'array' && isRecord(items) && Array.isArray(items.enum)) {
+    parseUiHints(rawValue, NO_UI_HINTS, key, ignored);
+    reportUnknownKeys(items, new Set(['enum']), `${key} (items)`, ignored);
+    reportUnknownKeys(
+      rawValue,
+      new Set([...BASE_CONSUMED_KEYS, 'type', 'items', 'uniqueItems']),
+      key,
+      ignored,
+    );
+    return { ...base, type: 'selection', multiple: true, options: parseEnumOptions(items.enum) };
+  }
+
+  if (Array.isArray(rawValue.enum)) {
+    parseUiHints(rawValue, NO_UI_HINTS, key, ignored);
+    reportUnknownKeys(rawValue, new Set([...BASE_CONSUMED_KEYS, 'enum', 'type']), key, ignored);
+    return {
+      ...base,
+      type: 'selection',
+      multiple: false,
+      options: parseEnumOptions(rawValue.enum),
+    };
+  }
+
+  if (rawValue.type === 'string') {
+    const uiHints = parseUiHints(rawValue, TEXT_UI_HINT_KEYS, key, ignored);
+    reportUnknownKeys(
+      rawValue,
+      new Set([...BASE_CONSUMED_KEYS, 'type', 'minLength', 'maxLength']),
+      key,
+      ignored,
+    );
+    return {
+      ...base,
+      type: 'text',
+      ...(typeof rawValue.minLength === 'number' && { minLength: rawValue.minLength }),
+      ...(typeof rawValue.maxLength === 'number' && { maxLength: rawValue.maxLength }),
+      ...(uiHints.placeholder !== undefined && { placeholder: uiHints.placeholder }),
+    };
+  }
+
+  if (rawValue.type === 'integer' || rawValue.type === 'number') {
+    parseUiHints(rawValue, NO_UI_HINTS, key, ignored);
+    reportUnknownKeys(
+      rawValue,
+      new Set([...BASE_CONSUMED_KEYS, 'type', 'minimum', 'maximum']),
+      key,
+      ignored,
+    );
+    return {
+      ...base,
+      type: 'number',
+      isFloat: rawValue.type === 'number',
+      ...(typeof rawValue.minimum === 'number' && { min: rawValue.minimum }),
+      ...(typeof rawValue.maximum === 'number' && { max: rawValue.maximum }),
+    };
+  }
+
+  const typeLabel = typeof rawValue.type === 'string' ? `"${rawValue.type}"` : 'unrecognized';
+  ignored.push(`Property "${key}": unsupported type ${typeLabel}, skipped`);
+  return null;
+};
+
+const decodeConditionValues = (rawCondition: unknown): string[] | null => {
+  if (!isRecord(rawCondition)) return null;
+  if (Array.isArray(rawCondition.enum)) return rawCondition.enum.map((entry) => String(entry));
+
+  const contains = rawCondition.contains;
+  if (isRecord(contains) && Array.isArray(contains.enum)) {
+    return contains.enum.map((entry) => String(entry));
+  }
+
+  return null;
+};
+
+const parseIfRules = (
+  ifSchema: Record<string, unknown>,
+  entryIndex: number,
+  ignored: string[],
+): FieldCondition[] => {
+  if (!isRecord(ifSchema.properties)) return [];
+
+  const rules: FieldCondition[] = [];
+  Object.entries(ifSchema.properties).forEach(([field, rawCondition]) => {
+    const values = decodeConditionValues(rawCondition);
+    if (values === null) {
+      ignored.push(`allOf[${entryIndex}]: condition on "${field}" not recognized, skipped`);
+      return;
+    }
+    rules.push({ id: crypto.randomUUID(), field, type: 'equals', values });
+  });
+  return rules;
+};
+
+const parseAllOf = (rawAllOf: unknown, usedKeys: Set<string>, ignored: string[]): FormField[] => {
+  if (!Array.isArray(rawAllOf)) return [];
+
+  const fields: FormField[] = [];
+
+  rawAllOf.forEach((entry, index) => {
+    const ifSchema = isRecord(entry) ? entry.if : undefined;
+    const thenSchema = isRecord(entry) ? entry.then : undefined;
+    if (!isRecord(ifSchema) || !isRecord(thenSchema) || !isRecord(thenSchema.properties)) {
+      ignored.push(`allOf[${index}]: not a recognized condition, skipped`);
+      return;
+    }
+
+    const rules = parseIfRules(ifSchema, index, ignored);
+    if (rules.length === 0) {
+      ignored.push(`allOf[${index}]: skipped, no usable conditions`);
+      return;
+    }
+
+    const conditions: ConditionGroup = { operator: 'and', rules };
+    const thenRequired = isStringArray(thenSchema.required) ? thenSchema.required : [];
+
+    Object.entries(thenSchema.properties).forEach(([dependentKey, dependentSchema]) => {
+      if (usedKeys.has(dependentKey)) {
+        ignored.push(`allOf[${index}]: duplicate property "${dependentKey}", skipped`);
+        return;
+      }
+
+      const field = parsePropertySchema(dependentKey, dependentSchema, ignored);
+      if (!field) return;
+
+      field.conditions = conditions;
+      field.required = thenRequired.includes(dependentKey);
+      usedKeys.add(dependentKey);
+      fields.push(field);
+    });
+  });
+
+  return fields;
+};
+
+export const parseJsonSchema = (input: unknown): ParsedSchemaResult => {
+  if (!isRecord(input) || !isRecord(input.properties)) {
+    throw new SchemaImportError('This file is not a valid JSON Schema object with "properties".');
+  }
+
+  const ignored: string[] = [];
+  const usedKeys = new Set<string>();
+  const fields: FormField[] = [];
+
+  Object.entries(input.properties).forEach(([key, propertySchema]) => {
+    const field = parsePropertySchema(key, propertySchema, ignored);
+    if (!field) return;
+    usedKeys.add(key);
+    fields.push(field);
+  });
+
+  if (Array.isArray(input.required)) {
+    input.required.forEach((key) => {
+      const field =
+        typeof key === 'string' ? fields.find((candidate) => candidate.key === key) : undefined;
+      if (field) field.required = true;
+    });
+  }
+
+  fields.push(...parseAllOf(input.allOf, usedKeys, ignored));
+
+  Object.keys(input)
+    .filter((key) => !KNOWN_ROOT_KEYS.has(key))
+    .forEach((key) => ignored.push(`Root: unsupported keyword "${key}" ignored`));
+
+  return { fields, ignored };
 };

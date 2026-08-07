@@ -517,4 +517,34 @@ describe('useFormBuilderStore', () => {
       expect(ids.every((id) => store.touchedFieldIds.has(id))).toBe(true);
     });
   });
+
+  describe('loadFromSchema', () => {
+    it('replaces the fields and clears selection and touched state', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.markAllTouched();
+
+      const imported = [{ ...store.fields[0]!, key: 'imported' }];
+      store.loadFromSchema(imported);
+
+      expect(store.fields).toEqual(imported);
+      expect(store.selectedField).toBeNull();
+      expect(store.touchedFieldIds.size).toBe(0);
+    });
+
+    it('leaves nothing to undo or redo, even after prior edits', () => {
+      const store = useFormBuilderStore();
+
+      store.addField('text');
+      store.addField('number');
+      store.undo();
+      expect(store.canRedo).toBe(true);
+
+      store.loadFromSchema([]);
+
+      expect(store.canUndo).toBe(false);
+      expect(store.canRedo).toBe(false);
+    });
+  });
 });

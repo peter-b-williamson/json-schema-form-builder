@@ -11,7 +11,10 @@ import type { FieldType, FieldUpdate, FormField } from '@/fields/types';
 export const useFormBuilderStore = defineStore('formBuilder', () => {
   const fields = ref<FormField[]>([]);
   const selectedId = ref<string | null>(null);
-  const { commit, undo, redo, canUndo, canRedo } = useUndoableFormHistory(fields, selectedId);
+  const { commit, undo, redo, clear, canUndo, canRedo } = useUndoableFormHistory(
+    fields,
+    selectedId,
+  );
 
   // Ephemeral UI state, deliberately not part of undo/redo history
   const touchedFieldIds = reactive(new Set<string>());
@@ -138,6 +141,13 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     Object.assign(field, safeUpdates);
   };
 
+  const loadFromSchema = (importedFields: FormField[]) => {
+    fields.value = importedFields;
+    selectedId.value = null;
+    touchedFieldIds.clear();
+    clear();
+  };
+
   return {
     fields,
     selectedId,
@@ -152,6 +162,7 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     markAllTouched,
     reorderFields,
     updateSelectedField,
+    loadFromSchema,
     undo,
     redo,
     canUndo,

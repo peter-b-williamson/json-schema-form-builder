@@ -121,4 +121,29 @@ describe('useHistoryStore', () => {
       expect(store.past).toHaveLength(1);
     });
   });
+
+  describe('clear', () => {
+    it('wipes both the undo and redo stacks', () => {
+      const store = useHistoryStore();
+
+      store.record(snapshot('a'));
+      store.undo(snapshot('b'));
+      expect(store.canRedo).toBe(true);
+
+      store.clear();
+
+      expect(store.canUndo).toBe(false);
+      expect(store.canRedo).toBe(false);
+    });
+
+    it('does not let a coalesce key from before clear() fold into a later record', () => {
+      const store = useHistoryStore();
+
+      store.record(snapshot('a'), 'field-1');
+      store.clear();
+      store.record(snapshot('b'), 'field-1');
+
+      expect(store.past).toHaveLength(1);
+    });
+  });
 });

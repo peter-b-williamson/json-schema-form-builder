@@ -33,6 +33,13 @@
 
   <div class="floating-actions right">
     <v-btn
+      icon="mdi-upload"
+      color="primary"
+      aria-label="Import schema"
+      data-cy="import-schema-button"
+      @click="importDialogRef?.open()"
+    />
+    <v-btn
       icon="mdi-download"
       color="primary"
       aria-label="Export schema"
@@ -42,6 +49,7 @@
   </div>
 
   <ExportSchemaDialog v-model="isExportDialogOpen" />
+  <ImportSchemaDialog ref="importDialogRef" />
 </template>
 
 <script setup lang="ts">
@@ -49,6 +57,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import ExportSchemaDialog from '@/components/ExportSchemaDialog.vue';
+import ImportSchemaDialog from '@/components/ImportSchemaDialog.vue';
 import { useFormBuilderStore } from '@/stores/formBuilder';
 
 // Composables
@@ -56,6 +65,7 @@ const formStore = useFormBuilderStore();
 
 // State
 const isExportDialogOpen = ref(false);
+const importDialogRef = ref<InstanceType<typeof ImportSchemaDialog> | null>(null);
 
 // Methods
 const handleKeydown = (event: KeyboardEvent) => {
