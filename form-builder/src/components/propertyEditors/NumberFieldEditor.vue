@@ -1,6 +1,18 @@
 <template>
-  <v-text-field v-model.number="min" label="Minimum" type="number" data-cy="field-min-input" />
-  <v-text-field v-model.number="max" label="Maximum" type="number" data-cy="field-max-input" />
+  <v-text-field
+    v-model.number="min"
+    label="Minimum"
+    type="number"
+    :error-messages="messagesFor('min')"
+    data-cy="field-min-input"
+  />
+  <v-text-field
+    v-model.number="max"
+    label="Maximum"
+    type="number"
+    :error-messages="messagesFor('max')"
+    data-cy="field-max-input"
+  />
   <v-checkbox
     v-model="isFloat"
     label="Allow decimal values"
@@ -10,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+import { useFieldPropertyErrors } from '@/composables/useFieldPropertyErrors';
 import { useFieldPropertyModel } from '@/composables/useFieldPropertyModel';
 import { useFormBuilderStore } from '@/stores/formBuilder';
 import type { NumberField } from '@/fields/types';
@@ -19,6 +32,11 @@ const props = defineProps<{ field: NumberField }>();
 
 // Composables
 const formStore = useFormBuilderStore();
+const { messagesFor } = useFieldPropertyErrors(
+  () => props.field,
+  () => formStore.fields,
+  () => formStore.touchedFieldIds.has(props.field.id),
+);
 
 // Computed
 const min = useFieldPropertyModel(() => props.field, 'min', formStore.updateSelectedField);

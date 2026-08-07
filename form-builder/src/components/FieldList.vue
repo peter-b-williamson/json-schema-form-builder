@@ -40,6 +40,14 @@
           </template>
 
           <template #append>
+            <v-icon
+              v-if="formStore.invalidFieldIds.has(field.id)"
+              icon="mdi-alert-circle"
+              color="error"
+              class="mr-1"
+              :aria-label="`${field.title} has validation errors`"
+              :data-cy="`field-error-icon-${field.id}`"
+            />
             <v-btn
               icon="mdi-delete"
               density="compact"

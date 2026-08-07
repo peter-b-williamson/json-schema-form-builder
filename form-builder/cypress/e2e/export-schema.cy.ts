@@ -6,7 +6,6 @@ describe('Exporting the schema', () => {
   it('opens the export dialog from the fab and closes it on cancel', () => {
     cy.get('[data-cy=export-schema-dialog]').should('not.exist');
 
-    // Reference actual button inside v-fab wrapping element
     cy.get('[data-cy=export-schema-button]').click();
 
     cy.get('[data-cy=export-schema-dialog]').should('be.visible');
@@ -25,7 +24,6 @@ describe('Exporting the schema', () => {
 
     const filename = `export-${Date.now()}`;
 
-    // Reference actual button inside v-fab wrapping element
     cy.get('[data-cy=export-schema-button]').click();
     cy.get('[data-cy=export-filename-input] input').clear();
     cy.get('[data-cy=export-filename-input] input').type(filename);
@@ -45,7 +43,6 @@ describe('Exporting the schema', () => {
   it('does not double up the suffix when the user already typed it', () => {
     const filename = `already-suffixed-${Date.now()}.schema.json`;
 
-    // Reference actual button inside v-fab wrapping element
     cy.get('[data-cy=export-schema-button]').click();
     cy.get('[data-cy=export-filename-input] input').clear();
     cy.get('[data-cy=export-filename-input] input').type(filename);
