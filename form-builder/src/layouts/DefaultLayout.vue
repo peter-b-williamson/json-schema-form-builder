@@ -1,7 +1,7 @@
 <template>
   <v-app-bar>
     <v-toolbar-title data-cy="app-title">
-      <h1 class="text-title-large">JSON Schema Form Builder</h1>
+      <h1 class="text-title-large" :class="xs ? 'wrap-title' : ''">JSON Schema Form Builder</h1>
     </v-toolbar-title>
     <template #append>
       <ThemeToggle />
@@ -54,6 +54,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
+import { useDisplay } from 'vuetify';
 
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import ExportSchemaDialog from '@/components/ExportSchemaDialog.vue';
@@ -61,6 +62,7 @@ import ImportSchemaDialog from '@/components/ImportSchemaDialog.vue';
 import { useFormBuilderStore } from '@/stores/formBuilder';
 
 // Composables
+const { xs } = useDisplay();
 const formStore = useFormBuilderStore();
 
 // State
@@ -87,6 +89,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 </script>
 
 <style scoped>
+h1.wrap-title {
+  white-space: break-spaces;
+}
+
 .floating-actions {
   position: fixed;
   display: flex;
